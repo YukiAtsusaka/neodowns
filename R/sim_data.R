@@ -16,6 +16,10 @@
 #' a low init parameter implies groups clustered around the origin with significant overlap.
 #' @param eth Parameter that controls for the separation of ideological space by ethnicity.
 #' eth = 0 is the maximum and eth = 1 is the minimum separation.
+#' @importFrom dplyr case_when `%>%` mutate select left_join
+#' @importFrom tidyr  pivot_longer
+#' @importFrom sads rzipf
+#' @export
 
 
 sim_data <- function(N_voters = 1000,
@@ -105,7 +109,7 @@ sim_data <- function(N_voters = 1000,
 
   # myR (radius) is the distance from the origin in a polar coordinate system,
   # if we generate it for a given point with a half normal distribution we are generating a bivariate distribution that has a 'normal' radius
-  myR <- rhnorm(N_voters, 1.5 * init)
+  myR <- rnorm(N_voters, 1.5 * init)
 
   # Family I (Normal)
   ## 1. Basic Normal distribution
@@ -230,14 +234,13 @@ sim_data <- function(N_voters = 1000,
   coords$party <- paste0("Group_", coords$group, "_", coords$type)
 
 
-  # Gut check that voters and parties are distributed how we'd expect around ethnic midlines
-  ggplot(data = coords) +
-    geom_point(data = voters, aes(x = x, y = y, col = factor(ethnic_group)), alpha = .5) +
-    geom_point(data = coords, aes(x = x, y = y, colour = factor(group), shape = type), fill = "grey", size = 5, stroke = 5) +
-    xlim(-4, 4) +
-    ylim(-4, 4) +
-    theme_classic()
-
+  # # Gut check that voters and parties are distributed how we'd expect around ethnic midlines
+  # ggplot(data = coords) +
+  #   geom_point(data = voters, aes(x = x, y = y, col = factor(ethnic_group)), alpha = .5) +
+  #   geom_point(data = coords, aes(x = x, y = y, colour = factor(group), shape = type), fill = "grey", size = 5, stroke = 5) +
+  #   xlim(-4, 4) +
+  #   ylim(-4, 4) +
+  #   theme_classic()
 
   out <- list(
     gen_voters = voters, # voter data
