@@ -1,10 +1,13 @@
 Package: neodowns
-Title: What the Package Does (One Line, Title Case)
+Title: Simulates Candidate Competition in Group-Based Elections
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Authors@R: c(
+  person("Yuki", "Atsusaka", email = "yuki.atsusaka@gmail.com",
+  role = c("aut", "cre"), comment = c(ORCID="0000-0001-5365-1876")),
+  person("Theodore", "Landsman", email = "theo.landsman@gmail.com",
+  role = c("aut"))
+  )
+Description: Performs computer simulations of candidate competition under different electoral systems based on the spatial model proposed in Atsusaka and Landsman (2024).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
