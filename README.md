@@ -22,8 +22,45 @@ Our workhorse function `sim_data` simulates spatial positions of voters and cand
 sim <- sim_data(N_voters = 1000,
                 N_groups = 3,
                 dist = "Normal")
+                
+library(ggplot2)                
+voters <- sim$gen_voters
+cands <- sim$gen_cands
 
+ggplot() +
+  geom_point(data = voters,
+             aes(x, y,
+                 shape = ethnic_group,
+                 color = ethnic_group),
+             size = 1, alpha = 0.5) +
+  geom_point(data = cands,
+             aes(x, y,
+                 shape = ethnic_group,
+                 color = ethnic_group),
+             size = 4) +
+  geom_hline(aes(yintercept = 0), color = "black", alpha = 0.5, linetype = "dashed") +
+  geom_vline(aes(xintercept = 0), color = "black", alpha = 0.5, linetype = "dashed") +
+  scale_color_manual(
+    values = c(
+      alpha("deepskyblue4", 1),
+      alpha("deeppink4", 1),
+      alpha("slategray", 1)
+    ),
+    name = "Group", labels = c("Group A", "Group B", "Group C")
+  ) +
+  scale_shape_manual(
+    name = "Group", labels = c("Group A", "Group B", "Group C"),
+    values = c(16, 17, 15)
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  ylab("") +
+  xlab("")
+  
+ggsave("man/fig/example-plot.png", height = 5, width = 5)  
 ```
+
+<img src="man/fig/example-plot.png" width="60%" style="display: block; margin: auto;"/>
 
 ## Performs simulations based on the neodownsian model
 
