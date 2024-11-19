@@ -30,14 +30,6 @@ sim_data <- function(N_voters = 1000,
                      init = 1,
                      eth = 1 / 3) {
 
-  # Defaults (Usually Commented Out, only for Debugging)
-  # N_voters <- 1000
-  # N_groups <- 3
-  # skew <- .6
-  # dev <- .75
-  # dist <- "Normal"
-  # init <- 1
-  # eth = 0
   set.seed(1524)
 
   # Step 1: Generate voters ethnicity (group affiliation) ========================
@@ -208,6 +200,7 @@ sim_data <- function(N_voters = 1000,
     coords$x_ext <- x$x * init * 1.3 # X value for extreme candidates
     coords$y_ext <- y$y * init * 1.3 # X value for extreme candidates
   }
+
   # Limit ideologies between -4 and 4
   voters <- voters %>%
     mutate(
@@ -221,8 +214,12 @@ sim_data <- function(N_voters = 1000,
         y < -4 ~ -4,
         TRUE ~ y
       ),
-      ethnic_group = paste0("Group ", ethnic_group)
-    )
+      ethnic_group = paste0("Group ", ethnic_group),
+      group = eth
+    ) %>%
+    dplyr::select(group, ethnic_group, x, y) %>%
+    tibble()
+
 
   coords <- coords %>%
     pivot_longer(
@@ -230,17 +227,12 @@ sim_data <- function(N_voters = 1000,
       cols_vary = "slowest",
       names_to = c(".value", "type"),
       names_sep = "_"
-    )
-  coords$party <- paste0("Group_", coords$group, "_", coords$type)
+    ) %>%
+  mutate(party = paste0("Group_", group, "_", type),
+         ethnic_group = paste0("Group ", group)) %>%
+    dplyr::select(group, ethnic_group, x, y, type, party)
 
 
-  # # Gut check that voters and parties are distributed how we'd expect around ethnic midlines
-  # ggplot(data = coords) +
-  #   geom_point(data = voters, aes(x = x, y = y, col = factor(ethnic_group)), alpha = .5) +
-  #   geom_point(data = coords, aes(x = x, y = y, colour = factor(group), shape = type), fill = "grey", size = 5, stroke = 5) +
-  #   xlim(-4, 4) +
-  #   ylim(-4, 4) +
-  #   theme_classic()
 
   out <- list(
     gen_voters = voters, # voter data
