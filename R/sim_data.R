@@ -34,7 +34,7 @@ sim_data <- function(N_voters = 1000,
 
   set.seed(seed)
 
-  # Step 1: Generate voters ethnicity (group affiliation) ========================
+# Step 1: Generate voters ethnicity (group affiliation) ========================
   ## based on zipfs law
   ## "s" determines the distribution of groups
   ## Allocate N_voters into N_groups
@@ -48,7 +48,7 @@ sim_data <- function(N_voters = 1000,
   ethnic <- tabulate(ethnic_group) # this will used at the end
   freq <- ethnic / sum(ethnic)
 
-  # Step 2: Generate voters' ideological positions ==============================
+# Step 2: Generate voters' ideological positions ==============================
   ## First, generate small, random numbers by drawing from a uniform distribution
   ## that is symmetrically bounded by "dev"
   ## the higher "dev" becomes, the more initial variation
@@ -175,7 +175,7 @@ sim_data <- function(N_voters = 1000,
   }
   cands$group <- c(1:N_groups)
 
-  # Step 3: Generate candidates' initial positions ===============================
+# Step 3: Generate candidates' initial positions ===============================
   ## by creating a midline for each group
   ## populate extreme and moderate parties at specific intervals
   ## along this midline and voters symmetrically around it

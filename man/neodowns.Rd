@@ -15,7 +15,8 @@ neodowns(
   unit = 0.05,
   force = TRUE,
   while_max = 200,
-  boost = 6
+  boost = 6,
+  seed = 14231
 )
 }
 \arguments{
