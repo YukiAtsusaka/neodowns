@@ -11,7 +11,8 @@ sim_data(
   dev = 0.75,
   dist = "Normal",
   init = 1,
-  eth = 1/3
+  eth = 1/3,
+  seed = 1524
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ a low init parameter implies groups clustered around the origin with significant
 
 \item{eth}{Parameter that controls for the separation of ideological space by ethnicity.
 eth = 0 is the maximum and eth = 1 is the minimum separation.}
+
+\item{seed}{Random seed for reproducibility.}
 }
 \description{
 \code{sim_data()} simulates ideological positions of voters and candidates.

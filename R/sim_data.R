@@ -16,21 +16,23 @@
 #' a low init parameter implies groups clustered around the origin with significant overlap.
 #' @param eth Parameter that controls for the separation of ideological space by ethnicity.
 #' eth = 0 is the maximum and eth = 1 is the minimum separation.
+#' @param seed Random seed for reproducibility.
 #' @importFrom dplyr case_when `%>%` mutate select left_join
-#' @importFrom tidyr  pivot_longer
+#' @importFrom tidyr pivot_longer
 #' @importFrom sads rzipf
 #' @export
 
 
 sim_data <- function(N_voters = 1000,
                      N_groups = 3,
-                     skew = .6,
-                     dev = .75,
+                     skew = 0.6,
+                     dev = 0.75,
                      dist = "Normal",
                      init = 1,
-                     eth = 1 / 3) {
+                     eth = 1/3,
+                     seed = 1524) {
 
-  set.seed(1524)
+  set.seed(seed)
 
   # Step 1: Generate voters ethnicity (group affiliation) ========================
   ## based on zipfs law
@@ -41,7 +43,8 @@ sim_data <- function(N_voters = 1000,
     N = N_groups,
     s = skew
   )
-  ## Check
+
+  ## local objects
   ethnic <- tabulate(ethnic_group) # this will used at the end
   freq <- ethnic / sum(ethnic)
 
@@ -62,11 +65,9 @@ sim_data <- function(N_voters = 1000,
 
 
   # create a frame for plotting the midlines of each ethhnic distribution
-  coords <- data.frame(
+  cands <- data.frame(
     group = c(1:N_groups)
   )
-
-
 
   # Generate voters' positions by distribution type
 
@@ -79,9 +80,12 @@ sim_data <- function(N_voters = 1000,
 
   # angle from which each group starts
   # First divide the space into shares based on the frequency of groups from the zipf distribution
+
   shares <- 360 * freq
   sharediv <- shares / 2
+
   # Find the midpoint of each share and adjust the distribution by 15 degrees
+
   angles <- c(0, sharediv[1:N_groups - 1] + sharediv[2:N_groups])
   starting_angles <- cumsum(angles) + 15
 
@@ -94,24 +98,24 @@ sim_data <- function(N_voters = 1000,
   rand <- u * N_groups * eth * shares[voters$ethnic_group] / 2
 
   voters$eth <- ifelse(runif(N_voters, 0, 1) < eth / 2, sample(1:3, N_voters, replace = TRUE), voters$ethnic_group)
+
   # This is where we can potentially include ethnic_ideology
   voterAngle <- starting_angles[voters$ethnic_group] + rand
-
   voterAngle_f <- starting_angles[voters$eth]
 
   # myR (radius) is the distance from the origin in a polar coordinate system,
   # if we generate it for a given point with a half normal distribution we are generating a bivariate distribution that has a 'normal' radius
+
   myR <- rnorm(N_voters, 1.5 * init)
 
   # Family I (Normal)
   ## 1. Basic Normal distribution
   if (dist != "Fan") {
-    # Generate Cartesian position for each voter from circular coordinates
 
+    # Generate Cartesian position for each voter from circular coordinates
     # v1 and v2 generate x and y adjustments based on angles for polar coordinate to cartesian coordinate adjustment
 
     v1 <- cos(voterAngle * pi / 180)
-
     v2 <- sin(voterAngle * pi / 180)
 
     # Key part --- Determine each voter's position
@@ -119,8 +123,8 @@ sim_data <- function(N_voters = 1000,
     ## voters$y: ideology in dimension y
 
     voters$x <- (v1 * myR) # Finish polar to x cartesian coordinate converion with half-normal radius + angle based conversion factor
-
     voters$y <- (v2 * myR) # Finish polar to y cartesian coordinate converion with half-normal radius + angle based conversion factor
+
     ## 2. Flat distribution
     if (dist == "Flat") {
       voters$x <- voters$x * 1.25
@@ -132,6 +136,7 @@ sim_data <- function(N_voters = 1000,
       voters$x[1:cutoff] <- voters$x[1:cutoff] / 10 + rnorm(cutoff, init, dev / 2)
       voters$x[(cutoff + 1):N_voters] <- voters$x[(cutoff + 1):N_voters] / 10 + rnorm(N_voters - cutoff, -init, dev / 2)
     }
+
     # Family II (Fan distribution)
   } else {
     # Generate Cartesian position for each voter
@@ -140,9 +145,7 @@ sim_data <- function(N_voters = 1000,
     # v1 and v2 generate x and y adjustments based on angles for circular coordinate to cartesian coordinate adjustment
 
     v1 <- cos(voterAngle_f * pi / 180)
-
     v2 <- sin(voterAngle_f * pi / 180)
-
 
     # Key part --- Determine each voter's position
     ## voters$x: ideology in dimension x
@@ -161,7 +164,6 @@ sim_data <- function(N_voters = 1000,
     )
 
     v1 <- cos(starting_angles * pi / 180)
-
     v2 <- sin(starting_angles * pi / 180)
 
     clusters$x <- v1 * 1.5 * init # circular to cartesian conversion x for N_groups single points to determine the centers of each cluster.
@@ -171,7 +173,7 @@ sim_data <- function(N_voters = 1000,
     voters$x <- voters$cx + clusters$x[voters$eth] * init * 1.2 + clustx
     voters$y <- voters$cy + clusters$y[voters$eth] * init * 1.2 + clusty
   }
-  coords$group <- c(1:N_groups)
+  cands$group <- c(1:N_groups)
 
   # Step 3: Generate candidates' initial positions ===============================
   ## by creating a midline for each group
@@ -184,21 +186,23 @@ sim_data <- function(N_voters = 1000,
   if (dist != "Clustered" & dist != "Polarized") {
     x_vectors <- cos((starting_angles * pi) / 180) # determines how parties are distributed on the angles in X
     y_vectors <- tan((starting_angles * pi) / 180) * ifelse(dist == "Flat", init * .1, 1) # determines how parties are distributed on the angles in Y
-    coords$x_mod <- init * .75 * x_vectors # X value for moderate candidates
-    coords$x_ext <- init * 1.5 * x_vectors # X value for extreme candidates
-    coords$y_mod <- coords$x_mod * y_vectors # Y value for moderate candidate
-    coords$y_ext <- coords$x_ext * y_vectors # Y value for extreme candidate
+    cands$x_mod <- init * .75 * x_vectors # X value for moderate candidates
+    cands$x_ext <- init * 1.5 * x_vectors # X value for extreme candidates
+    cands$y_mod <- cands$x_mod * y_vectors # Y value for moderate candidate
+    cands$y_ext <- cands$x_ext * y_vectors # Y value for extreme candidate
   } else {
+
     x <- voters %>%
       group_by(ethnic_group) %>%
       summarize(x = mean(x))
     y <- voters %>%
       group_by(ethnic_group) %>%
       summarize(y = mean(y))
-    coords$x_mod <- x$x * init * .85
-    coords$y_mod <- y$y * init * .85
-    coords$x_ext <- x$x * init * 1.3 # X value for extreme candidates
-    coords$y_ext <- y$y * init * 1.3 # X value for extreme candidates
+
+    cands$x_mod <- x$x * init * .85
+    cands$y_mod <- y$y * init * .85
+    cands$x_ext <- x$x * init * 1.3 # X value for extreme candidates
+    cands$y_ext <- y$y * init * 1.3 # X value for extreme candidates
   }
 
   # Limit ideologies between -4 and 4
@@ -221,7 +225,7 @@ sim_data <- function(N_voters = 1000,
     tibble()
 
 
-  coords <- coords %>%
+  cands <- cands %>%
     pivot_longer(
       x_mod:y_ext,
       cols_vary = "slowest",
@@ -233,10 +237,10 @@ sim_data <- function(N_voters = 1000,
     dplyr::select(group, ethnic_group, x, y, type, party)
 
 
-
+# Output
   out <- list(
     gen_voters = voters, # voter data
-    gen_cands = coords   # candidate data
+    gen_cands = cands   # candidate data
   )
 
   return(out)
