@@ -43,8 +43,8 @@ neodowns(
 \item{boost}{Unit by which a simulation pushes a stuck candidate out of a trap.
 @return
 A list, which has the following components:
-\item{gen_voters}{a matrix containing the simulated ideological positions of voters.}
-\item{gen_cands}{a matrix containing the simulated ideological positions of candidates.}}
+\item{d_voters}{a matrix containing the simulated ideological positions of voters.}
+\item{d_cands}{a matrix containing the simulated ideological positions of candidates.}}
 }
 \description{
 \code{neodowns()} simulates the changes in candidate positions under three electoral strategies.

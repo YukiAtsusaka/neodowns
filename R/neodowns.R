@@ -19,6 +19,7 @@
 #'  \item{d_cands}{a matrix containing the simulated ideological positions of candidates.}
 #' @importFrom dplyr case_when `%>%` mutate select left_join rename tibble filter
 #' @importFrom progress progress_bar
+#' @importFrom rlang := !!
 #' @export
 
 
@@ -62,6 +63,12 @@ neodowns <- function(data,
     mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
            b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
 
+  c <- init$c
+  b <- init$b
+
+  # isseue with c
+  # must change the later part simultanesouly
+
   # c <- rnorm(n = N_voters, mean = mu_c, sd = sigma_c)
   # b <- rnorm(n = N_voters, mean = mu_b, sd = sigma_b)
 
@@ -72,37 +79,36 @@ neodowns <- function(data,
     init <- init %>%
       mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
              "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-             "eps{j}" := rnorm(n = N_voters, sd = eps_sd))
-
+             "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
+             "V{j}" := -c * !! as.name(paste0("D",j))
+                       -b * !! as.name(paste0("m",j))
+                       + !! as.name(paste0("eps",j))
+             )
   }
 
+  # Mismatch Indicator
+  m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
+  m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
 
-#  "V{j}" := -1 * c * "D{j}" - b * "m{j}" + "eps{j}"
+  # Random Errors, created outside chains
+  eps1 <- rnorm(n = N_voters, sd = eps_sd)
+  eps2 <- rnorm(n = N_voters, sd = eps_sd)
+  eps3 <- rnorm(n = N_voters, sd = eps_sd)
+  eps4 <- rnorm(n = N_voters, sd = eps_sd)
+  eps5 <- rnorm(n = N_voters, sd = eps_sd)
+  eps6 <- rnorm(n = N_voters, sd = eps_sd)
 
-
-  # # Mismatch Indicator
-  # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  # m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  # m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  # m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  # m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  # m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-
-  # # Random Errors, created outside chains
-  # eps1 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps2 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps3 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps4 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps5 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps6 <- rnorm(n = N_voters, sd = eps_sd)
-
-  # Computing the observed utility for each party (This is where we specify utility functions)
-  init$V1 <- -1 * c * init$D1 - b * m1 + eps1
-  init$V2 <- -1 * c * init$D2 - b * m2 + eps2
-  init$V3 <- -1 * c * init$D3 - b * m3 + eps3
-  init$V4 <- -1 * c * init$D4 - b * m4 + eps4
-  init$V5 <- -1 * c * init$D5 - b * m5 + eps5
-  init$V6 <- -1 * c * init$D6 - b * m6 + eps6
+  # # Computing the observed utility for each party (This is where we specify utility functions)
+  # init$V1 <- -1 * c * init$D1 - b * m1 + eps1
+  # init$V2 <- -1 * c * init$D2 - b * m2 + eps2
+  # init$V3 <- -1 * c * init$D3 - b * m3 + eps3
+  # init$V4 <- -1 * c * init$D4 - b * m4 + eps4
+  # init$V5 <- -1 * c * init$D5 - b * m5 + eps5
+  # init$V6 <- -1 * c * init$D6 - b * m6 + eps6
 
   # (1): FPTP
   # Computing the first-choice probability that each voter votes for each party
