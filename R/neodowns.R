@@ -15,8 +15,8 @@
 #' @param boost Unit by which a simulation pushes a stuck candidate out of a trap.
 #'  @return
 #' A list, which has the following components:
-#'  \item{gen_voters}{a matrix containing the simulated ideological positions of voters.}
-#'  \item{gen_cands}{a matrix containing the simulated ideological positions of candidates.}
+#'  \item{d_voters}{a matrix containing the simulated ideological positions of voters.}
+#'  \item{d_cands}{a matrix containing the simulated ideological positions of candidates.}
 #' @importFrom dplyr case_when `%>%` mutate select left_join rename tibble filter
 #' @importFrom progress progress_bar
 #' @export
@@ -36,64 +36,65 @@ neodowns <- function(data,
                      seed = 14231) {
 
 
-  gen_voters <- data$gen_voters
-  gen_cands <- data$gen_cands %>%
+  d_voters <- data$gen_voters
+  d_cands <- data$gen_cands %>%
     mutate(dist = sqrt((x - 0)^2 + (y - 0)^2))
 
   set.seed(seed)
 
   n_iter <- n_iter
-  init <- gen_voters        # Feeding the voter distribution to "initial chain" for both systems
-  chain <- gen_voters       # Feeding the voter distribution to Markov "chain" for FPTP
-  chain_rcv <- gen_voters   # Feeding the voter distribution to Markov "chain" for RCV -- Second choice
-  chain_rcv_t <- gen_voters # Feeding the voter distribution to Markov "chain" for RCV -- Third Choice
+  J <- dim(d_cands)[1] # number of candidates
+
+  # Feeding the voter distribution to "initial chain" for both systems
+  init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
+
+  # chain <- d_voters       # Feeding the voter distribution to Markov "chain" for FPTP
+  # chain_rcv <- d_voters   # Feeding the voter distribution to Markov "chain" for RCV -- Second choice
+  # chain_rcv_t <- d_voters # Feeding the voter distribution to Markov "chain" for RCV -- Third Choice
   # chain and chain_rcv appear in the t loop below (used in the iteration)
 
 
-# Create J columbs for distance
+  # Fixed parameters, created outside chains
+  N_voters <- dim(d_voters)[1]
+  m_vec <- rep(1:(J/2), 2) # used in J-loop
 
-  J <- 6
-  for (i in 1:J) {
-    init <- init %>% mutate("D{i}" := sqrt((x - gen_cands$x[{i}])^2 + (y - gen_cands$y[{i}])^2))
+  init <- init %>%
+    mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
+           b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
+
+  # c <- rnorm(n = N_voters, mean = mu_c, sd = sigma_c)
+  # b <- rnorm(n = N_voters, mean = mu_b, sd = sigma_b)
+
+  # Create distance for all candidate
+
+    for (j in 1:J) {
+
+    init <- init %>%
+      mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
+             "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
+             "eps{j}" := rnorm(n = N_voters, sd = eps_sd))
+
   }
 
 
-  # init <- init %>%
-  #   mutate(D1 = sqrt((x - gen_cands$x[1])^2 + (y - gen_cands$y[1])^2),
-  #          D2 = sqrt((x - gen_cands$x[2])^2 + (y - gen_cands$y[2])^2),
-  #          D3 = sqrt((x - gen_cands$x[3])^2 + (y - gen_cands$y[3])^2),
-  #          D4 = sqrt((x - gen_cands$x[4])^2 + (y - gen_cands$y[4])^2),
-  #          D5 = sqrt((x - gen_cands$x[5])^2 + (y - gen_cands$y[5])^2),
-  #          D6 = sqrt((x - gen_cands$x[6])^2 + (y - gen_cands$y[6])^2))
-
-  # init$D1 <- sqrt((init$x - gen_cands$x[1])^2 + (init$y - gen_cands$y[1])^2)
-  # init$D2 <- sqrt((init$x - gen_cands$x[2])^2 + (init$y - gen_cands$y[2])^2)
-  # init$D3 <- sqrt((init$x - gen_cands$x[3])^2 + (init$y - gen_cands$y[3])^2)
-  # init$D4 <- sqrt((init$x - gen_cands$x[4])^2 + (init$y - gen_cands$y[4])^2)
-  # init$D5 <- sqrt((init$x - gen_cands$x[5])^2 + (init$y - gen_cands$y[5])^2)
-  # init$D6 <- sqrt((init$x - gen_cands$x[6])^2 + (init$y - gen_cands$y[6])^2)
+#  "V{j}" := -1 * c * "D{j}" - b * "m{j}" + "eps{j}"
 
 
-  # Fixed parameters, created outside chains
-  N_voters <- dim(gen_voters)[1]
-  c <- rnorm(n = N_voters, mean = mu_c, sd = sigma_c)
-  b <- rnorm(n = N_voters, mean = mu_b, sd = sigma_b)
+  # # Mismatch Indicator
+  # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  # m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  # m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
+  # m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  # m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  # m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
 
-  # Mismatch Indicator
-  m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-
-  # Random Errors, created outside chains
-  eps1 <- rnorm(n = N_voters, sd = eps_sd)
-  eps2 <- rnorm(n = N_voters, sd = eps_sd)
-  eps3 <- rnorm(n = N_voters, sd = eps_sd)
-  eps4 <- rnorm(n = N_voters, sd = eps_sd)
-  eps5 <- rnorm(n = N_voters, sd = eps_sd)
-  eps6 <- rnorm(n = N_voters, sd = eps_sd)
+  # # Random Errors, created outside chains
+  # eps1 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps2 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps3 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps4 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps5 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps6 <- rnorm(n = N_voters, sd = eps_sd)
 
   # Computing the observed utility for each party (This is where we specify utility functions)
   init$V1 <- -1 * c * init$D1 - b * m1 + eps1
@@ -379,13 +380,13 @@ neodowns <- function(data,
 
   # ========================================================================#
   # Updating party positions (initial move)
-  move <- gen_cands
+  move <- d_cands
   theta <- runif(n = 6, min = 0, max = 360) # Generating random angels
 
-  move$x <- gen_cands$x + cos(theta / 180 * pi) * (unit / 2) # Compute x-value given theta SETTING THIS 0.01 (8/3/2022)
-  move$y <- gen_cands$y + sin(theta / 180 * pi) * (unit / 2) # Compute y-value given theta
+  move$x <- d_cands$x + cos(theta / 180 * pi) * (unit / 2) # Compute x-value given theta SETTING THIS 0.01 (8/3/2022)
+  move$y <- d_cands$y + sin(theta / 180 * pi) * (unit / 2) # Compute y-value given theta
   move$dist <- sqrt((move$x - 0)^2 + (move$y - 0)^2)
-  move$moderation <- move$dist / gen_cands$dist
+  move$moderation <- move$dist / d_cands$dist
 
   move_rcv <- move # Using the same initial conditions
   move_rcv_t <- move # Using the same initial conditions
