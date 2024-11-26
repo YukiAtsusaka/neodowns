@@ -19,7 +19,7 @@
 #' @param seed Random seed for reproducibility.
 #' @importFrom dplyr case_when `%>%` mutate select left_join
 #' @importFrom tidyr pivot_longer
-#' @importFrom sads rzipf
+#' @importFrom VGAM rzipf rrayleigh
 #' @export
 
 
@@ -104,9 +104,10 @@ sim_data <- function(N_voters = 1000,
   voterAngle_f <- starting_angles[voters$eth]
 
   # myR (radius) is the distance from the origin in a polar coordinate system,
-  # if we generate it for a given point with a half normal distribution we are generating a bivariate distribution that has a 'normal' radius
+  # if we generate it for a given point with a normal distribution we are generating a bivariate distribution that has a 'normal' radius
 
-  myR <- rnorm(N_voters, 1.5 * init)
+  myR <-rrayleigh(N_voters,init)
+    #abs(rnorm(N_voters,0, .5 * init))
 
   # Family I (Normal)
   ## 1. Basic Normal distribution
@@ -122,7 +123,7 @@ sim_data <- function(N_voters = 1000,
     ## voters$x: ideology in dimension x
     ## voters$y: ideology in dimension y
 
-    voters$x <- (v1 * myR) # Finish polar to x cartesian coordinate converion with half-normal radius + angle based conversion factor
+    voters$x <- (v1 * myR) # Finish polar to x cartesian coordinate converion with normal radius + angle based conversion factor
     voters$y <- (v2 * myR) # Finish polar to y cartesian coordinate converion with half-normal radius + angle based conversion factor
 
     ## 2. Flat distribution
