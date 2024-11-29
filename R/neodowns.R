@@ -58,6 +58,21 @@ neodowns <- function(data,
     mutate(param_c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
            param_b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
 
+  # Create distance for all candidate
+
+  for (j in 1:J) {
+
+  d_voters <- d_voters %>%
+      mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
+             "m{j}" := ifelse(d_voters$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
+             "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
+             "V{j}" := -param_c * !! as.name(paste0("D",j))
+             -param_b * !! as.name(paste0("m",j))
+             + !! as.name(paste0("eps",j))
+      )
+  }
+
+
   init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
 
   # c <- init$param_c # temporary
@@ -69,19 +84,6 @@ neodowns <- function(data,
   # c <- rnorm(n = N_voters, mean = mu_c, sd = sigma_c)
   # b <- rnorm(n = N_voters, mean = mu_b, sd = sigma_b)
 
-  # Create distance for all candidate
-
-    for (j in 1:J) {
-
-    init <- init %>%
-      mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-             "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-             "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
-             "V{j}" := -param_c * !! as.name(paste0("D",j))
-                       -param_b * !! as.name(paste0("m",j))
-                       + !! as.name(paste0("eps",j))
-             )
-  }
 
   # # Mismatch Indicator
   # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
@@ -400,7 +402,6 @@ neodowns <- function(data,
     width = 100       # Width of the progress bar
   )
 
-
 # Loop for Markov Chains -------------------------------------------------------
   # Iterating Updates
   iter <- 1
@@ -416,17 +417,13 @@ neodowns <- function(data,
 
 
     for (j in 1:J) {
-
       chain <- chain %>%
         mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-               "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-               "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
                "V{j}" := -param_c * !! as.name(paste0("D",j))
                -param_b * !! as.name(paste0("m",j))
                + !! as.name(paste0("eps",j))
         )
     }
-
 
     # chain$D1 <- sqrt((chain$x - move_max1$x[1])^2 + (chain$y - move_max1$y[1])^2)
     # chain$D2 <- sqrt((chain$x - move_max1$x[2])^2 + (chain$y - move_max1$y[2])^2)
@@ -534,12 +531,11 @@ neodowns <- function(data,
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
     # Compute the voting probabilities again
 
+
     for (j in 1:J) {
 
       chain_rcv <- chain_rcv %>%
         mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-               "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-               "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
                "V{j}" := -param_c * !! as.name(paste0("D",j))
                -param_b * !! as.name(paste0("m",j))
                + !! as.name(paste0("eps",j))
@@ -697,8 +693,6 @@ neodowns <- function(data,
 
       chain_rcv_t <- chain_rcv_t %>%
         mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-               "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-               "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
                "V{j}" := -param_c * !! as.name(paste0("D",j))
                -param_b * !! as.name(paste0("m",j))
                + !! as.name(paste0("eps",j))
