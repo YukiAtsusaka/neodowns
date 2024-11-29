@@ -54,14 +54,14 @@ neodowns <- function(data,
 # Chain initialization ---------------------------------------------------------
 
   # Feeding the voter distribution to "initial chain" for both systems
+  d_voters <- d_voters %>%
+    mutate(param_c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
+           param_b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
+
   init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
 
-  init <- init %>%
-    mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
-           b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
-
-  c <- init$c
-  b <- init$b
+  # c <- init$param_c # temporary
+  # b <- init$param_b # temporary
 
   # isseue with c
   # must change the later part simultanesouly
@@ -77,27 +77,27 @@ neodowns <- function(data,
       mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
              "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
              "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
-             "V{j}" := -c * !! as.name(paste0("D",j))
-                       -b * !! as.name(paste0("m",j))
+             "V{j}" := -param_c * !! as.name(paste0("D",j))
+                       -param_b * !! as.name(paste0("m",j))
                        + !! as.name(paste0("eps",j))
              )
   }
 
-  # Mismatch Indicator
-  m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-
-  # Random Errors, created outside chains
-  eps1 <- rnorm(n = N_voters, sd = eps_sd)
-  eps2 <- rnorm(n = N_voters, sd = eps_sd)
-  eps3 <- rnorm(n = N_voters, sd = eps_sd)
-  eps4 <- rnorm(n = N_voters, sd = eps_sd)
-  eps5 <- rnorm(n = N_voters, sd = eps_sd)
-  eps6 <- rnorm(n = N_voters, sd = eps_sd)
+  # # Mismatch Indicator
+  # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  # m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  # m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
+  # m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  # m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  # m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
+  #
+  # # Random Errors, created outside chains
+  # eps1 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps2 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps3 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps4 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps5 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps6 <- rnorm(n = N_voters, sd = eps_sd)
 
   # # Computing the observed utility for each party (This is where we specify utility functions)
   # init$V1 <- -1 * c * init$D1 - b * m1 + eps1
@@ -414,20 +414,34 @@ neodowns <- function(data,
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
     # Compute the voting probabilities again
 
-    chain$D1 <- sqrt((chain$x - move_max1$x[1])^2 + (chain$y - move_max1$y[1])^2)
-    chain$D2 <- sqrt((chain$x - move_max1$x[2])^2 + (chain$y - move_max1$y[2])^2)
-    chain$D3 <- sqrt((chain$x - move_max1$x[3])^2 + (chain$y - move_max1$y[3])^2)
-    chain$D4 <- sqrt((chain$x - move_max1$x[4])^2 + (chain$y - move_max1$y[4])^2)
-    chain$D5 <- sqrt((chain$x - move_max1$x[5])^2 + (chain$y - move_max1$y[5])^2)
-    chain$D6 <- sqrt((chain$x - move_max1$x[6])^2 + (chain$y - move_max1$y[6])^2)
 
-    # Computing the observed utility for each party (This is where we specify utility functions)
-    chain$V1 <- -1 * c * chain$D1 - b * m1 + eps1
-    chain$V2 <- -1 * c * chain$D2 - b * m2 + eps2
-    chain$V3 <- -1 * c * chain$D3 - b * m3 + eps3
-    chain$V4 <- -1 * c * chain$D4 - b * m4 + eps4
-    chain$V5 <- -1 * c * chain$D5 - b * m5 + eps5
-    chain$V6 <- -1 * c * chain$D6 - b * m6 + eps6
+    for (j in 1:J) {
+
+      chain <- chain %>%
+        mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
+               "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
+               "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
+               "V{j}" := -param_c * !! as.name(paste0("D",j))
+               -param_b * !! as.name(paste0("m",j))
+               + !! as.name(paste0("eps",j))
+        )
+    }
+
+
+    # chain$D1 <- sqrt((chain$x - move_max1$x[1])^2 + (chain$y - move_max1$y[1])^2)
+    # chain$D2 <- sqrt((chain$x - move_max1$x[2])^2 + (chain$y - move_max1$y[2])^2)
+    # chain$D3 <- sqrt((chain$x - move_max1$x[3])^2 + (chain$y - move_max1$y[3])^2)
+    # chain$D4 <- sqrt((chain$x - move_max1$x[4])^2 + (chain$y - move_max1$y[4])^2)
+    # chain$D5 <- sqrt((chain$x - move_max1$x[5])^2 + (chain$y - move_max1$y[5])^2)
+    # chain$D6 <- sqrt((chain$x - move_max1$x[6])^2 + (chain$y - move_max1$y[6])^2)
+    #
+    # # Computing the observed utility for each party (This is where we specify utility functions)
+    # chain$V1 <- -1 * c * chain$D1 - b * m1 + eps1
+    # chain$V2 <- -1 * c * chain$D2 - b * m2 + eps2
+    # chain$V3 <- -1 * c * chain$D3 - b * m3 + eps3
+    # chain$V4 <- -1 * c * chain$D4 - b * m4 + eps4
+    # chain$V5 <- -1 * c * chain$D5 - b * m5 + eps5
+    # chain$V6 <- -1 * c * chain$D6 - b * m6 + eps6
 
     # Computing the probability that each voter votes for each party (this is fixed)
     den <- exp(chain$V1) + exp(chain$V2) + exp(chain$V3) + exp(chain$V4) + exp(chain$V5) + exp(chain$V6)
@@ -520,21 +534,34 @@ neodowns <- function(data,
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
     # Compute the voting probabilities again
 
-    # Computing the Euclidean distance between parties and voters
-    chain_rcv$D1 <- sqrt((chain_rcv$x - move_max2$x[1])^2 + (chain_rcv$y - move_max2$y[1])^2)
-    chain_rcv$D2 <- sqrt((chain_rcv$x - move_max2$x[2])^2 + (chain_rcv$y - move_max2$y[2])^2)
-    chain_rcv$D3 <- sqrt((chain_rcv$x - move_max2$x[3])^2 + (chain_rcv$y - move_max2$y[3])^2)
-    chain_rcv$D4 <- sqrt((chain_rcv$x - move_max2$x[4])^2 + (chain_rcv$y - move_max2$y[4])^2)
-    chain_rcv$D5 <- sqrt((chain_rcv$x - move_max2$x[5])^2 + (chain_rcv$y - move_max2$y[5])^2)
-    chain_rcv$D6 <- sqrt((chain_rcv$x - move_max2$x[6])^2 + (chain_rcv$y - move_max2$y[6])^2)
+    for (j in 1:J) {
 
-    # Computing the observed utility for each party (This is where we specify utility functions)
-    chain_rcv$V1 <- -1 * c * chain_rcv$D1 - b * m1 + eps1
-    chain_rcv$V2 <- -1 * c * chain_rcv$D2 - b * m2 + eps2
-    chain_rcv$V3 <- -1 * c * chain_rcv$D3 - b * m3 + eps3
-    chain_rcv$V4 <- -1 * c * chain_rcv$D4 - b * m4 + eps4
-    chain_rcv$V5 <- -1 * c * chain_rcv$D5 - b * m5 + eps5
-    chain_rcv$V6 <- -1 * c * chain_rcv$D6 - b * m6 + eps6
+      chain_rcv <- chain_rcv %>%
+        mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
+               "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
+               "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
+               "V{j}" := -param_c * !! as.name(paste0("D",j))
+               -param_b * !! as.name(paste0("m",j))
+               + !! as.name(paste0("eps",j))
+        )
+    }
+
+#
+#     # Computing the Euclidean distance between parties and voters
+#     chain_rcv$D1 <- sqrt((chain_rcv$x - move_max2$x[1])^2 + (chain_rcv$y - move_max2$y[1])^2)
+#     chain_rcv$D2 <- sqrt((chain_rcv$x - move_max2$x[2])^2 + (chain_rcv$y - move_max2$y[2])^2)
+#     chain_rcv$D3 <- sqrt((chain_rcv$x - move_max2$x[3])^2 + (chain_rcv$y - move_max2$y[3])^2)
+#     chain_rcv$D4 <- sqrt((chain_rcv$x - move_max2$x[4])^2 + (chain_rcv$y - move_max2$y[4])^2)
+#     chain_rcv$D5 <- sqrt((chain_rcv$x - move_max2$x[5])^2 + (chain_rcv$y - move_max2$y[5])^2)
+#     chain_rcv$D6 <- sqrt((chain_rcv$x - move_max2$x[6])^2 + (chain_rcv$y - move_max2$y[6])^2)
+#
+#     # Computing the observed utility for each party (This is where we specify utility functions)
+#     chain_rcv$V1 <- -1 * c * chain_rcv$D1 - b * m1 + eps1
+#     chain_rcv$V2 <- -1 * c * chain_rcv$D2 - b * m2 + eps2
+#     chain_rcv$V3 <- -1 * c * chain_rcv$D3 - b * m3 + eps3
+#     chain_rcv$V4 <- -1 * c * chain_rcv$D4 - b * m4 + eps4
+#     chain_rcv$V5 <- -1 * c * chain_rcv$D5 - b * m5 + eps5
+#     chain_rcv$V6 <- -1 * c * chain_rcv$D6 - b * m6 + eps6
 
     # Computing the probability that each voter votes for each party (this is fixed)
     den <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6)
@@ -589,8 +616,10 @@ neodowns <- function(data,
     P_s_vec <- rbind(P1_s_score, P2_s_score, P3_s_score, P4_s_score, P5_s_score, P6_s_score)
 
     # CHECK
-    try(if (sum(P_vec_rcv[, 1]) != N_voters) stop("RCV1: 1st-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_s_vec[, 1]) != N_voters) stop("RCV1: 2nd-choice ranking probabilities do not sum up to one"))
+    try(if (sum(P_vec_rcv[, 1]) != N_voters)
+      stop("RCV1: 1st-choice ranking probabilities do not sum up to one"))
+    try(if (sum(P_s_vec[, 1]) != N_voters)
+      stop("RCV1: 2nd-choice ranking probabilities do not sum up to one"))
 
 
     # ============================================================================#
@@ -664,21 +693,34 @@ neodowns <- function(data,
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
     # Compute the voting probabilities again
 
-    # Computing the Euclidean distance between parties and voters
-    chain_rcv_t$D1 <- sqrt((chain_rcv_t$x - move_max3$x[1])^2 + (chain_rcv_t$y - move_max3$y[1])^2)
-    chain_rcv_t$D2 <- sqrt((chain_rcv_t$x - move_max3$x[2])^2 + (chain_rcv_t$y - move_max3$y[2])^2)
-    chain_rcv_t$D3 <- sqrt((chain_rcv_t$x - move_max3$x[3])^2 + (chain_rcv_t$y - move_max3$y[3])^2)
-    chain_rcv_t$D4 <- sqrt((chain_rcv_t$x - move_max3$x[4])^2 + (chain_rcv_t$y - move_max3$y[4])^2)
-    chain_rcv_t$D5 <- sqrt((chain_rcv_t$x - move_max3$x[5])^2 + (chain_rcv_t$y - move_max3$y[5])^2)
-    chain_rcv_t$D6 <- sqrt((chain_rcv_t$x - move_max3$x[6])^2 + (chain_rcv_t$y - move_max3$y[6])^2)
+    for (j in 1:J) {
 
-    # Computing the observed utility for each party (This is where we specify utility functions)
-    chain_rcv_t$V1 <- -1 * c * chain_rcv_t$D1 - b * m1 + eps1
-    chain_rcv_t$V2 <- -1 * c * chain_rcv_t$D2 - b * m2 + eps2
-    chain_rcv_t$V3 <- -1 * c * chain_rcv_t$D3 - b * m3 + eps3
-    chain_rcv_t$V4 <- -1 * c * chain_rcv_t$D4 - b * m4 + eps4
-    chain_rcv_t$V5 <- -1 * c * chain_rcv_t$D5 - b * m5 + eps5
-    chain_rcv_t$V6 <- -1 * c * chain_rcv_t$D6 - b * m6 + eps6
+      chain_rcv_t <- chain_rcv_t %>%
+        mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
+               "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
+               "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
+               "V{j}" := -param_c * !! as.name(paste0("D",j))
+               -param_b * !! as.name(paste0("m",j))
+               + !! as.name(paste0("eps",j))
+        )
+    }
+
+
+    # # Computing the Euclidean distance between parties and voters
+    # chain_rcv_t$D1 <- sqrt((chain_rcv_t$x - move_max3$x[1])^2 + (chain_rcv_t$y - move_max3$y[1])^2)
+    # chain_rcv_t$D2 <- sqrt((chain_rcv_t$x - move_max3$x[2])^2 + (chain_rcv_t$y - move_max3$y[2])^2)
+    # chain_rcv_t$D3 <- sqrt((chain_rcv_t$x - move_max3$x[3])^2 + (chain_rcv_t$y - move_max3$y[3])^2)
+    # chain_rcv_t$D4 <- sqrt((chain_rcv_t$x - move_max3$x[4])^2 + (chain_rcv_t$y - move_max3$y[4])^2)
+    # chain_rcv_t$D5 <- sqrt((chain_rcv_t$x - move_max3$x[5])^2 + (chain_rcv_t$y - move_max3$y[5])^2)
+    # chain_rcv_t$D6 <- sqrt((chain_rcv_t$x - move_max3$x[6])^2 + (chain_rcv_t$y - move_max3$y[6])^2)
+    #
+    # # Computing the observed utility for each party (This is where we specify utility functions)
+    # chain_rcv_t$V1 <- -1 * c * chain_rcv_t$D1 - b * m1 + eps1
+    # chain_rcv_t$V2 <- -1 * c * chain_rcv_t$D2 - b * m2 + eps2
+    # chain_rcv_t$V3 <- -1 * c * chain_rcv_t$D3 - b * m3 + eps3
+    # chain_rcv_t$V4 <- -1 * c * chain_rcv_t$D4 - b * m4 + eps4
+    # chain_rcv_t$V5 <- -1 * c * chain_rcv_t$D5 - b * m5 + eps5
+    # chain_rcv_t$V6 <- -1 * c * chain_rcv_t$D6 - b * m6 + eps6
 
     # Computing the probability that each voter votes for each party (this is fixed)
     den <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6)
