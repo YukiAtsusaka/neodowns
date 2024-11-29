@@ -1056,22 +1056,55 @@ neodowns <- function(data,
   # print(ed - st) # Total time to execute the loop
 
   # Combining the summary statistics
-  out <- tibble(
-    iter,
-    delta, epsilon, delta_md, delta_ex,
-    delta_rcv, epsilon_rcv_1, epsilon_rcv_2, delta_rcv_md, delta_rcv_ex,
-    delta_rcv_t, epsilon_rcv_t_1, epsilon_rcv_t_2, epsilon_rcv_t_3, delta_rcv_t_md, delta_rcv_t_ex,
-    # dist_Am, dist_Ae, dist_Bm, dist_Be, dist_Cm, dist_Ce,
-    # dist_rcvAm, dist_rcvAe, dist_rcvBm, dist_rcvBe, dist_rcvCm, dist_rcvCe,
-    # dist_rcv_tAm, dist_rcv_tAe, dist_rcv_tBm, dist_rcv_tBe, dist_rcv_tCm, dist_rcv_tCe
-  ) %>%
-    dplyr::filter(iter != 1)
+
+  # out <- tibble(
+  #   iter,
+  #   delta, epsilon, delta_md, delta_ex,
+  #   delta_rcv, epsilon_rcv_1, epsilon_rcv_2, delta_rcv_md, delta_rcv_ex,
+  #   delta_rcv_t, epsilon_rcv_t_1, epsilon_rcv_t_2, epsilon_rcv_t_3, delta_rcv_t_md, delta_rcv_t_ex,
+  #   # dist_Am, dist_Ae, dist_Bm, dist_Be, dist_Cm, dist_Ce,
+  #   # dist_rcvAm, dist_rcvAe, dist_rcvBm, dist_rcvBe, dist_rcvCm, dist_rcvCe,
+  #   # dist_rcv_tAm, dist_rcv_tAe, dist_rcv_tBm, dist_rcv_tBe, dist_rcv_tCm, dist_rcv_tCe
+  # ) %>%
+  #   dplyr::filter(iter != 1)
+
+  track[[1]] <- d_cands %>%
+    mutate(moderation = 1,
+           new_dist = dist,
+           iter = 1)
+
+  track_rcv[[1]] <- d_cands %>%
+    mutate(moderation = 1,
+           new_dist = dist,
+           iter = 1)
+
+  track_rcv_t[[1]] <- d_cands %>%
+    mutate(moderation = 1,
+           new_dist = dist,
+           iter = 1)
+
+  track_max1 <- as.data.frame(do.call(rbind, track)) %>%
+    mutate(system = "max1")
+  track_max2 <- as.data.frame(do.call(rbind, track_rcv)) %>%
+    mutate(system = "max2")
+  track_max3 <- as.data.frame(do.call(rbind, track_rcv_t)) %>%
+    mutate(system = "max3")
+
+  # combine all results
+  track <- rbind(track_max1, track_max2, track_max3) %>%
+    tibble()
+
+
+  out <- list(
+    cands = track
+  )
 
   return(out)
 
   # FUTURE WORK: Add the summary table for each experiment
   # ADD some warning based on "check"s
 }
+
 
 # Burn-in
 # Random Sampling from the Chains (to address autocorrelation)
