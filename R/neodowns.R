@@ -201,12 +201,6 @@ neodowns <- function(data,
   # max(init$P5 + init$P5_s)
   # max(init$P6 + init$P6_s)
 
-  # # Compute Ethnic Polarization in initial second choices
-  # init$epsilon2 <- case_when(
-  #   init$ethnic_group == "Group 1" ~ init$P1_s + init$P4_s,
-  #   init$ethnic_group == "Group 2" ~ init$P2_s + init$P5_s,
-  # )
-
 
   # Compute the SECOND-choice probability score (sum of all support probabilities)
   P1_s_score <- NA
@@ -350,14 +344,6 @@ neodowns <- function(data,
   # max(init$P5 + init$P5_s + init$P5_t)
   # max(init$P6 + init$P6_s + init$P6_t)
 
-  # # Compute Ethnic Polarization in initial third choices
-  # init$epsilon3 <- case_when(
-  #   init$ethnic_group == "Group 1" ~ init$P1_t + init$P4_t,
-  #   init$ethnic_group == "Group 2" ~ init$P2_t + init$P5_t,
-  #   init$ethnic_group == "Group 3" ~ init$P3_t + init$P6_t
-  # )
-
-
   # Compute the THIRD-choice probability score (sum of all support probabilities)
   P1_tt_score <- NA
   P2_tt_score <- NA
@@ -400,22 +386,6 @@ neodowns <- function(data,
   new_theta <- NA
   new_theta_rcv <- NA
   new_theta_rcv_t <- NA
-
-  # delta <- delta_md <- delta_ex <- NA
-  # delta_rcv <- delta_rcv_md <- delta_rcv_ex <- NA
-  # delta_rcv_t <- delta_rcv_t_md <- delta_rcv_t_ex <- NA
-  # dist_Am <- dist_Ae <- dist_Bm <- dist_Be <- dist_Cm <- dist_Ce <- NA
-  # dist_rcvAm <- dist_rcvAe <- dist_rcvBm <- dist_rcvBe <- dist_rcvCm <- dist_rcvCe <- NA
-  # dist_rcv_tAm <- dist_rcv_tAe <- dist_rcv_tBm <- dist_rcv_tBe <- dist_rcv_tCm <- dist_rcv_tCe <- NA
-  # epsilon <- NA
-  # epsilon_rcv_1 <- NA
-  # epsilon_rcv_2 <- NA
-  # epsilon_rcv_t_1 <- NA
-  # epsilon_rcv_t_2 <- NA
-  # epsilon_rcv_t_3 <- NA
-  # check_A <- check_B <- check_C <- NA # To Check if Extreme Parties stay extreme
-  # check_rcvA <- check_rcvB <- check_rcvC <- NA # To Check if Extreme Parties stay extreme
-  # check_rcv_tA <- check_rcv_tB <- check_rcv_tC <- NA # To Check if Extreme Parties stay extreme
 
 
   pb <- progress_bar$new(
@@ -466,14 +436,6 @@ neodowns <- function(data,
     chain$P4 <- exp(chain$V4) / den
     chain$P5 <- exp(chain$V5) / den
     chain$P6 <- exp(chain$V6) / den
-
-    # # Compute Ethnic Polarization in first choices
-    # chain$epsilon1 <- case_when(
-    #   chain$ethnic_group == "Group 1" ~ chain$P1 + chain$P4,
-    #   chain$ethnic_group == "Group 2" ~ chain$P2 + chain$P5,
-    #   chain$ethnic_group == "Group 3" ~ chain$P3 + chain$P6
-    # )
-
 
     # Compute the probability score (sum of all support probabilities)
     P1_score[t] <- sum(chain$P1)
@@ -582,15 +544,6 @@ neodowns <- function(data,
     chain_rcv$P5 <- exp(chain_rcv$V5) / den
     chain_rcv$P6 <- exp(chain_rcv$V6) / den
 
-    # # Compute Ethnic Polarization in first choices
-    # chain_rcv$epsilon1 <- case_when(
-    #   chain_rcv$ethnic_group == "Group 1" ~ chain_rcv$P1 + chain_rcv$P4,
-    #   chain_rcv$ethnic_group == "Group 2" ~ chain_rcv$P2 + chain_rcv$P5,
-    #   chain_rcv$ethnic_group == "Group 3" ~ chain_rcv$P3 + chain_rcv$P6
-    # )
-
-
-
 
     V_den_ex1 <- exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6) # Second-choice prob without P1
     V_den_ex2 <- exp(chain_rcv$V1) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6) # Second-choice prob without P2
@@ -612,15 +565,6 @@ neodowns <- function(data,
       (exp(chain_rcv$V5) / V_den_ex3) * chain_rcv$P3 + (exp(chain_rcv$V5) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V5) / V_den_ex6) * chain_rcv$P6
     chain_rcv$P6_s <- (exp(chain_rcv$V6) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V6) / V_den_ex2) * chain_rcv$P2 +
       (exp(chain_rcv$V6) / V_den_ex3) * chain_rcv$P3 + (exp(chain_rcv$V6) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V6) / V_den_ex5) * chain_rcv$P5
-
-
-    # # Compute Ethnic Polarization in second choices
-    # chain_rcv$epsilon2 <- case_when(
-    #   chain_rcv$ethnic_group == "Group 1" ~ chain_rcv$P1_s + chain_rcv$P4_s,
-    #   chain_rcv$ethnic_group == "Group 2" ~ chain_rcv$P2_s + chain_rcv$P5_s,
-    #   chain_rcv$ethnic_group == "Group 3" ~ chain_rcv$P3_s + chain_rcv$P6_s
-    # )
-
 
 
     # Compute the probability score (sum of all support probabilities)
@@ -744,16 +688,6 @@ neodowns <- function(data,
     chain_rcv_t$P5 <- exp(chain_rcv_t$V5) / den
     chain_rcv_t$P6 <- exp(chain_rcv_t$V6) / den
 
-
-
-    # # Compute Ethnic Polarization in first choices (RCV 3 choice model)
-    # chain_rcv_t$epsilon1 <- case_when(
-    #   chain_rcv_t$ethnic_group == "Group 1" ~ chain_rcv_t$P1 + chain_rcv_t$P4,
-    #   chain_rcv_t$ethnic_group == "Group 2" ~ chain_rcv_t$P2 + chain_rcv_t$P5,
-    #   chain_rcv_t$ethnic_group == "Group 3" ~ chain_rcv_t$P3 + chain_rcv_t$P6
-    # )
-
-
     V_den_ex1 <- exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P1
     V_den_ex2 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P2
     V_den_ex3 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P3
@@ -774,14 +708,6 @@ neodowns <- function(data,
       (exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V5) / V_den_ex6) * chain_rcv_t$P6
     chain_rcv_t$P6_s <- (exp(chain_rcv_t$V6) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V6) / V_den_ex2) * chain_rcv_t$P2 +
       (exp(chain_rcv_t$V6) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V6) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V6) / V_den_ex5) * chain_rcv_t$P5
-
-
-    # # Compute Ethnic Polarization in second choices (RCV 3 choice model)
-    # chain_rcv_t$epsilon2 <- case_when(
-    #   chain_rcv_t$ethnic_group == "Group 1" ~ chain_rcv_t$P1_s + chain_rcv_t$P4_s,
-    #   chain_rcv_t$ethnic_group == "Group 2" ~ chain_rcv_t$P2_s + chain_rcv_t$P5_s,
-    #   chain_rcv_t$ethnic_group == "Group 3" ~ chain_rcv_t$P3_s + chain_rcv_t$P6_s
-    # )
 
 
     # Computing the third-choice probability that each voter votes for each party
@@ -868,14 +794,6 @@ neodowns <- function(data,
       (exp(chain_rcv_t$V6) / V_den_ex34) * ((exp(chain_rcv_t$V4) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex4) * chain_rcv_t$P4) +
       (exp(chain_rcv_t$V6) / V_den_ex35) * ((exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex5) * chain_rcv_t$P5) +
       (exp(chain_rcv_t$V6) / V_den_ex45) * ((exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex5) * chain_rcv_t$P5)
-
-
-    # # Compute Ethnic Polarization in first choices (RCV 3 choice model)
-    # chain_rcv_t$epsilon3 <- case_when(
-    #   chain_rcv_t$ethnic_group == "Group 1" ~ chain_rcv_t$P1_t + chain_rcv_t$P4_t,
-    #   chain_rcv_t$ethnic_group == "Group 2" ~ chain_rcv_t$P2_t + chain_rcv_t$P5_t,
-    #   chain_rcv_t$ethnic_group == "Group 3" ~ chain_rcv_t$P3_t + chain_rcv_t$P6_t
-    # )
 
 
     # Compute the probability score (sum of all support probabilities)
@@ -999,81 +917,13 @@ neodowns <- function(data,
     voter_max2[[t]] <- chain_rcv
     voter_max3[[t]] <- chain_rcv_t
 
-    # # Ideological polarization
-    # delta[t] <- mean(move_max1$moderation)
-    # delta_rcv[t] <- mean(move_max2$moderation)
-    # delta_rcv_t[t] <- mean(move_max3$moderation)
-
-    # ## By parties
-    # delta_md[t] <- mean(move_max1$moderation[move_max1$type == "mod"])
-    # delta_rcv_md[t] <- mean(move_max2$moderation[move_max1$type == "mod"])
-    # delta_rcv_t_md[t] <- mean(move_max3$moderation[move_max1$type == "mod"])
-    # delta_ex[t] <- mean(move_max1$moderation[move_max1$type == "ext"])
-    # delta_rcv_ex[t] <- mean(move_max2$moderation[move_max1$type == "ext"])
-    # delta_rcv_t_ex[t] <- mean(move_max3$moderation[move_max1$type == "ext"])
-
-
-
     iter[t] <- t
 
-    # # Ethnic polarization
-    # epsilon[t] <- mean(chain$epsilon1) / mean(init$epsilon1)
-    # epsilon_rcv_1[t] <- mean(chain_rcv$epsilon1) / mean(init$epsilon1)
-    # epsilon_rcv_2[t] <- mean(chain_rcv$epsilon2) / mean(init$epsilon2)
-    # epsilon_rcv_t_1[t] <- mean(chain_rcv_t$epsilon1) / mean(init$epsilon1)
-    # epsilon_rcv_t_2[t] <- mean(chain_rcv_t$epsilon2) / mean(init$epsilon2)
-    # epsilon_rcv_t_3[t] <- mean(chain_rcv_t$epsilon3) / mean(init$epsilon3)
-
-    # # For keeping cands_max1 of each patty's location
-    # dist_Am[t] <- move_max1$new_dist[1]
-    # dist_Ae[t] <- move_max1$new_dist[1 + 3]
-    # dist_Bm[t] <- move_max1$new_dist[2]
-    # dist_Be[t] <- move_max1$new_dist[2 + 3]
-    # dist_Cm[t] <- move_max1$new_dist[3]
-    # dist_Ce[t] <- move_max1$new_dist[3 + 3]
-    #
-    # dist_rcvAm[t] <- move_max2$new_dist[1]
-    # dist_rcvAe[t] <- move_max2$new_dist[1 + 3]
-    # dist_rcvBm[t] <- move_max2$new_dist[2]
-    # dist_rcvBe[t] <- move_max2$new_dist[2 + 3]
-    # dist_rcvCm[t] <- move_max2$new_dist[3]
-    # dist_rcvCe[t] <- move_max2$new_dist[3 + 3]
-    #
-    # dist_rcv_tAm[t] <- move_max3$new_dist[1]
-    # dist_rcv_tAe[t] <- move_max3$new_dist[1 + 3]
-    # dist_rcv_tBm[t] <- move_max3$new_dist[2]
-    # dist_rcv_tBe[t] <- move_max3$new_dist[2 + 3]
-    # dist_rcv_tCm[t] <- move_max3$new_dist[3]
-    # dist_rcv_tCe[t] <- move_max3$new_dist[3 + 3]
-
-    # # For checking the violetion of Assumption 1
-    # check_A[t] <- move_max1$new_dist[4] > move_max1$new_dist[1]
-    # check_B[t] <- move_max1$new_dist[5] > move_max1$new_dist[2]
-    # check_C[t] <- move_max1$new_dist[6] > move_max1$new_dist[3]
-    #
-    # check_rcvA[t] <- move_max2$new_dist[4] > move_max2$new_dist[1]
-    # check_rcvB[t] <- move_max2$new_dist[5] > move_max2$new_dist[2]
-    # check_rcvC[t] <- move_max2$new_dist[6] > move_max2$new_dist[3]
-    #
-    # check_rcv_tA[t] <- move_max3$new_dist[4] > move_max3$new_dist[1]
-    # check_rcv_tB[t] <- move_max3$new_dist[5] > move_max3$new_dist[2]
-    # check_rcv_tC[t] <- move_max3$new_dist[6] > move_max3$new_dist[3]
   }
 
   # END OF t loop #############################################################################
 
-  # Combining the summary statistics
 
-  # out <- tibble(
-  #   iter,
-  #   delta, epsilon, delta_md, delta_ex,
-  #   delta_rcv, epsilon_rcv_1, epsilon_rcv_2, delta_rcv_md, delta_rcv_ex,
-  #   delta_rcv_t, epsilon_rcv_t_1, epsilon_rcv_t_2, epsilon_rcv_t_3, delta_rcv_t_md, delta_rcv_t_ex,
-  #   # dist_Am, dist_Ae, dist_Bm, dist_Be, dist_Cm, dist_Ce,
-  #   # dist_rcvAm, dist_rcvAe, dist_rcvBm, dist_rcvBe, dist_rcvCm, dist_rcvCe,
-  #   # dist_rcv_tAm, dist_rcv_tAe, dist_rcv_tBm, dist_rcv_tBe, dist_rcv_tCm, dist_rcv_tCe
-  # ) %>%
-  #   dplyr::filter(iter != 1)
 
   cands_max1[[1]] <- d_cands %>%
     mutate(moderation = 1,
