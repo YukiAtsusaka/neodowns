@@ -205,7 +205,6 @@ neodowns <- function(data,
   # init$epsilon2 <- case_when(
   #   init$ethnic_group == "Group 1" ~ init$P1_s + init$P4_s,
   #   init$ethnic_group == "Group 2" ~ init$P2_s + init$P5_s,
-  #   init$ethnic_group == "Group 3" ~ init$P3_s + init$P6_s
   # )
 
 
@@ -380,51 +379,52 @@ neodowns <- function(data,
   # print(sum(P_tt_vec)) # GOOD! It needs to be N=1000
 
   # ========================================================================#
-  # Updating party positions (initial move)
-  move <- d_cands
+  # Updating party positions (initial move_max1)
+  move_max1 <- d_cands
   theta <- runif(n = 6, min = 0, max = 360) # Generating random angels
 
-  move$x <- d_cands$x + cos(theta / 180 * pi) * (unit / 2) # Compute x-value given theta SETTING THIS 0.01 (8/3/2022)
-  move$y <- d_cands$y + sin(theta / 180 * pi) * (unit / 2) # Compute y-value given theta
-  move$dist <- sqrt((move$x - 0)^2 + (move$y - 0)^2)
-  move$moderation <- move$dist / d_cands$dist
+  move_max1$x <- d_cands$x + cos(theta / 180 * pi) * (unit / 2) # Compute x-value given theta SETTING THIS 0.01 (8/3/2022)
+  move_max1$y <- d_cands$y + sin(theta / 180 * pi) * (unit / 2) # Compute y-value given theta
+  move_max1$dist <- sqrt((move_max1$x - 0)^2 + (move_max1$y - 0)^2)
+  move_max1$moderation <- move_max1$dist / d_cands$dist
 
-  move_rcv <- move # Using the same initial conditions
-  move_rcv_t <- move # Using the same initial conditions
+  move_max2 <- move_max1 # Using the same initial conditions
+  move_max3 <- move_max1 # Using the same initial conditions
   theta_rcv <- theta # Using the same initial directions
   theta_rcv_t <- theta # Using the same initial directions
   # ========================================================================#
 
   iter <- NA
-  track <- track_rcv <- track_rcv_t <- list()
+  cands_max1 <- cands_max2 <- cands_max3 <- list()
   voter_max1 <- voter_max2 <- voter_max3 <- list()
   new_theta <- NA
   new_theta_rcv <- NA
   new_theta_rcv_t <- NA
-  delta <- delta_md <- delta_ex <- NA
-  delta_rcv <- delta_rcv_md <- delta_rcv_ex <- NA
-  delta_rcv_t <- delta_rcv_t_md <- delta_rcv_t_ex <- NA
-  dist_Am <- dist_Ae <- dist_Bm <- dist_Be <- dist_Cm <- dist_Ce <- NA
-  dist_rcvAm <- dist_rcvAe <- dist_rcvBm <- dist_rcvBe <- dist_rcvCm <- dist_rcvCe <- NA
-  dist_rcv_tAm <- dist_rcv_tAe <- dist_rcv_tBm <- dist_rcv_tBe <- dist_rcv_tCm <- dist_rcv_tCe <- NA
-  epsilon <- NA
-  epsilon_rcv_1 <- NA
-  epsilon_rcv_2 <- NA
-  epsilon_rcv_t_1 <- NA
-  epsilon_rcv_t_2 <- NA
-  epsilon_rcv_t_3 <- NA
-  check_A <- check_B <- check_C <- NA # To Check if Extreme Parties stay extreme
-  check_rcvA <- check_rcvB <- check_rcvC <- NA # To Check if Extreme Parties stay extreme
-  check_rcv_tA <- check_rcv_tB <- check_rcv_tC <- NA # To Check if Extreme Parties stay extreme
+
+  # delta <- delta_md <- delta_ex <- NA
+  # delta_rcv <- delta_rcv_md <- delta_rcv_ex <- NA
+  # delta_rcv_t <- delta_rcv_t_md <- delta_rcv_t_ex <- NA
+  # dist_Am <- dist_Ae <- dist_Bm <- dist_Be <- dist_Cm <- dist_Ce <- NA
+  # dist_rcvAm <- dist_rcvAe <- dist_rcvBm <- dist_rcvBe <- dist_rcvCm <- dist_rcvCe <- NA
+  # dist_rcv_tAm <- dist_rcv_tAe <- dist_rcv_tBm <- dist_rcv_tBe <- dist_rcv_tCm <- dist_rcv_tCe <- NA
+  # epsilon <- NA
+  # epsilon_rcv_1 <- NA
+  # epsilon_rcv_2 <- NA
+  # epsilon_rcv_t_1 <- NA
+  # epsilon_rcv_t_2 <- NA
+  # epsilon_rcv_t_3 <- NA
+  # check_A <- check_B <- check_C <- NA # To Check if Extreme Parties stay extreme
+  # check_rcvA <- check_rcvB <- check_rcvC <- NA # To Check if Extreme Parties stay extreme
+  # check_rcv_tA <- check_rcv_tB <- check_rcv_tC <- NA # To Check if Extreme Parties stay extreme
 
 
   pb <- progress_bar$new(
     format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
     total = n_iter,
-    complete = "=", # Completion bar character
+    complete = "=",   # Completion bar character
     incomplete = "-", # Incomplete bar character
-    current = ">", # Current bar character
-    clear = FALSE, # If TRUE, clears the bar when finish
+    current = ">",    # Current bar character
+    clear = FALSE,    # If TRUE, clears the bar when finish
     width = 100
   ) # Width of the progress bar
 
@@ -442,12 +442,12 @@ neodowns <- function(data,
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
     # Compute the voting probabilities again
 
-    chain$D1 <- sqrt((chain$x - move$x[1])^2 + (chain$y - move$y[1])^2)
-    chain$D2 <- sqrt((chain$x - move$x[2])^2 + (chain$y - move$y[2])^2)
-    chain$D3 <- sqrt((chain$x - move$x[3])^2 + (chain$y - move$y[3])^2)
-    chain$D4 <- sqrt((chain$x - move$x[4])^2 + (chain$y - move$y[4])^2)
-    chain$D5 <- sqrt((chain$x - move$x[5])^2 + (chain$y - move$y[5])^2)
-    chain$D6 <- sqrt((chain$x - move$x[6])^2 + (chain$y - move$y[6])^2)
+    chain$D1 <- sqrt((chain$x - move_max1$x[1])^2 + (chain$y - move_max1$y[1])^2)
+    chain$D2 <- sqrt((chain$x - move_max1$x[2])^2 + (chain$y - move_max1$y[2])^2)
+    chain$D3 <- sqrt((chain$x - move_max1$x[3])^2 + (chain$y - move_max1$y[3])^2)
+    chain$D4 <- sqrt((chain$x - move_max1$x[4])^2 + (chain$y - move_max1$y[4])^2)
+    chain$D5 <- sqrt((chain$x - move_max1$x[5])^2 + (chain$y - move_max1$y[5])^2)
+    chain$D6 <- sqrt((chain$x - move_max1$x[6])^2 + (chain$y - move_max1$y[6])^2)
 
     # Computing the observed utility for each party (This is where we specify utility functions)
     chain$V1 <- -1 * c * chain$D1 - b * m1 + eps1
@@ -493,7 +493,7 @@ neodowns <- function(data,
     #  Updating party locations
     # ============================================================================#
     new_theta <- NA # Initialize
-    move$new_dist <- NA # Initialize
+    move_max1$new_dist <- NA # Initialize
     for (i in 1:6) {
       # For Moderate Parties
       if (i < 4) {
@@ -502,10 +502,10 @@ neodowns <- function(data,
           runif(n = 1, min = theta[i] + 90, max = theta[i] + 270)
         ) # New position on the other side
 
-        move$x[i] <- move$x[i] + cos(new_theta[i] / 180 * pi) * unit # Compute x-value given theta
-        move$y[i] <- move$y[i] + sin(new_theta[i] / 180 * pi) * unit # Compute y-value given theta
-        move$new_dist[i] <- sqrt((move$x[i] - 0)^2 + (move$y[i] - 0)^2) # New Distance
-        move$moderation[i] <- move$new_dist[i] / move$dist[i] # New Location / Initial Location
+        move_max1$x[i] <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit # Compute x-value given theta
+        move_max1$y[i] <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit # Compute y-value given theta
+        move_max1$new_dist[i] <- sqrt((move_max1$x[i] - 0)^2 + (move_max1$y[i] - 0)^2) # New Distance
+        move_max1$moderation[i] <- move_max1$new_dist[i] / move_max1$dist[i] # New Location / Initial Location
         theta[i] <- new_theta[i] # Update for the next iteration
 
 
@@ -517,33 +517,33 @@ neodowns <- function(data,
         ) # New position on the other side
 
         # Updating party locations
-        propose_x <- move$x[i] + cos(new_theta[i] / 180 * pi) * unit # Compute x-value given theta
-        propose_y <- move$y[i] + sin(new_theta[i] / 180 * pi) * unit # Compute y-value given theta
-        move$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
+        propose_x <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit # Compute x-value given theta
+        propose_y <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit # Compute y-value given theta
+        move_max1$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
 
         # Change the direction until extreme parties become more extreme than moderate parties
         if (force == TRUE) {
           while_iter <- 1
-          while (move$new_dist[i] < move$new_dist[i - 3] & while_iter <= while_max) {
+          while (move_max1$new_dist[i] < move_max1$new_dist[i - 3] & while_iter <= while_max) {
             new_theta[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
-            propose_x <- move$x[i] + cos(new_theta[i] / 180 * pi) * unit * boost # Compute x-value given theta
-            propose_y <- move$y[i] + sin(new_theta[i] / 180 * pi) * unit * boost # Compute y-value given theta
-            move$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
+            propose_x <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit * boost # Compute x-value given theta
+            propose_y <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit * boost # Compute y-value given theta
+            move_max1$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
 
             while_iter <- while_iter + 1
           } # Close while () loop
 
-          # If extreme parties cannot find a way out, STAY (NO MOVE)
+          # If extreme parties cannot find a way out, STAY (NO move_max1)
           if (while_iter == while_max) {
-            propose_x <- move$x[i]
-            propose_y <- move$y[i]
+            propose_x <- move_max1$x[i]
+            propose_y <- move_max1$y[i]
           }
         } # Closing Assumption 1 condition
 
 
-        move$x[i] <- propose_x # Saving the accepted location
-        move$y[i] <- propose_y # Saving the accepted location
-        move$moderation[i] <- move$new_dist[i] / move$dist[i] # New Location / Initial Location
+        move_max1$x[i] <- propose_x # Saving the accepted location
+        move_max1$y[i] <- propose_y # Saving the accepted location
+        move_max1$moderation[i] <- move_max1$new_dist[i] / move_max1$dist[i] # New Location / Initial Location
         theta[i] <- new_theta[i] # Update for the next iteration
       } # Close else{}
     } # Close for () loop
@@ -557,12 +557,12 @@ neodowns <- function(data,
     # Compute the voting probabilities again
 
     # Computing the Euclidean distance between parties and voters
-    chain_rcv$D1 <- sqrt((chain_rcv$x - move_rcv$x[1])^2 + (chain_rcv$y - move_rcv$y[1])^2)
-    chain_rcv$D2 <- sqrt((chain_rcv$x - move_rcv$x[2])^2 + (chain_rcv$y - move_rcv$y[2])^2)
-    chain_rcv$D3 <- sqrt((chain_rcv$x - move_rcv$x[3])^2 + (chain_rcv$y - move_rcv$y[3])^2)
-    chain_rcv$D4 <- sqrt((chain_rcv$x - move_rcv$x[4])^2 + (chain_rcv$y - move_rcv$y[4])^2)
-    chain_rcv$D5 <- sqrt((chain_rcv$x - move_rcv$x[5])^2 + (chain_rcv$y - move_rcv$y[5])^2)
-    chain_rcv$D6 <- sqrt((chain_rcv$x - move_rcv$x[6])^2 + (chain_rcv$y - move_rcv$y[6])^2)
+    chain_rcv$D1 <- sqrt((chain_rcv$x - move_max2$x[1])^2 + (chain_rcv$y - move_max2$y[1])^2)
+    chain_rcv$D2 <- sqrt((chain_rcv$x - move_max2$x[2])^2 + (chain_rcv$y - move_max2$y[2])^2)
+    chain_rcv$D3 <- sqrt((chain_rcv$x - move_max2$x[3])^2 + (chain_rcv$y - move_max2$y[3])^2)
+    chain_rcv$D4 <- sqrt((chain_rcv$x - move_max2$x[4])^2 + (chain_rcv$y - move_max2$y[4])^2)
+    chain_rcv$D5 <- sqrt((chain_rcv$x - move_max2$x[5])^2 + (chain_rcv$y - move_max2$y[5])^2)
+    chain_rcv$D6 <- sqrt((chain_rcv$x - move_max2$x[6])^2 + (chain_rcv$y - move_max2$y[6])^2)
 
     # Computing the observed utility for each party (This is where we specify utility functions)
     chain_rcv$V1 <- -1 * c * chain_rcv$D1 - b * m1 + eps1
@@ -652,7 +652,7 @@ neodowns <- function(data,
     # ============================================================================#
 
     new_theta_rcv <- NA # Initialize
-    move_rcv$new_dist <- NA # Initialize
+    move_max2$new_dist <- NA # Initialize
     for (i in 1:6) {
       # For moderate parties
       if (i < 4) {
@@ -662,10 +662,10 @@ neodowns <- function(data,
         runif(n = 1, min = theta_rcv[i] + 90, max = theta_rcv[i] + 270)
         ) # New position on the other side
 
-        move_rcv$x[i] <- move_rcv$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit # Compute x-value given theta
-        move_rcv$y[i] <- move_rcv$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit # Compute y-value given theta
-        move_rcv$new_dist[i] <- sqrt((move_rcv$x[i] - 0)^2 + (move_rcv$y[i] - 0)^2) # New Distance
-        move_rcv$moderation[i] <- move_rcv$new_dist[i] / move_rcv$dist[i] # New Location / Initial Location
+        move_max2$x[i] <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit # Compute x-value given theta
+        move_max2$y[i] <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit # Compute y-value given theta
+        move_max2$new_dist[i] <- sqrt((move_max2$x[i] - 0)^2 + (move_max2$y[i] - 0)^2) # New Distance
+        move_max2$moderation[i] <- move_max2$new_dist[i] / move_max2$dist[i] # New Location / Initial Location
         theta_rcv[i] <- new_theta_rcv[i] # Update for the next iteration
 
         # For extreme parties
@@ -677,18 +677,18 @@ neodowns <- function(data,
         ) # New position on the other side
 
         # Updating party locations
-        propose_x <- move_rcv$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit # Compute x-value given theta
-        propose_y <- move_rcv$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit # Compute y-value given theta
-        move_rcv$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
+        propose_x <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit # Compute x-value given theta
+        propose_y <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit # Compute y-value given theta
+        move_max2$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
 
         if (force == TRUE) {
           while_iter <- 1
           # Change the direction until extreme parties become more extreme than moderate parties
-          while (move_rcv$new_dist[i] < move_rcv$new_dist[i - 3] & while_iter <= while_max) {
+          while (move_max2$new_dist[i] < move_max2$new_dist[i - 3] & while_iter <= while_max) {
             new_theta_rcv[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
-            propose_x <- move_rcv$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute x-value given theta
-            propose_y <- move_rcv$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute y-value given theta
-            move_rcv$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
+            propose_x <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute x-value given theta
+            propose_y <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute y-value given theta
+            move_max2$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
 
             while_iter <- while_iter + 1
           } # Close while () loop
@@ -696,18 +696,18 @@ neodowns <- function(data,
           #   print(paste0("While Iteration (RCV - 2nd): ", while_iter, " for party ", i, " at iteration = ", t))
           # }
 
-          # If extreme parties cannot find a way out, STAY (NO MOVE)
+          # If extreme parties cannot find a way out, STAY (NO move_max1)
           if (while_iter == while_max) {
-            propose_x <- move$x[i]
-            propose_y <- move$y[i]
+            propose_x <- move_max1$x[i]
+            propose_y <- move_max1$y[i]
           }
         } # Closing the Assumption 1 condition
 
 
-        move_rcv$x[i] <- propose_x # Saving the accepted location
-        move_rcv$y[i] <- propose_y # Saving the accepted location
+        move_max2$x[i] <- propose_x # Saving the accepted location
+        move_max2$y[i] <- propose_y # Saving the accepted location
 
-        move_rcv$moderation[i] <- move_rcv$new_dist[i] / move_rcv$dist[i] # New Location / Initial Location
+        move_max2$moderation[i] <- move_max2$new_dist[i] / move_max2$dist[i] # New Location / Initial Location
         theta_rcv[i] <- new_theta_rcv[i] # Update for the next iteration
       } # Close else{}
     } # Close for () loop
@@ -719,12 +719,12 @@ neodowns <- function(data,
     # Compute the voting probabilities again
 
     # Computing the Euclidean distance between parties and voters
-    chain_rcv_t$D1 <- sqrt((chain_rcv_t$x - move_rcv_t$x[1])^2 + (chain_rcv_t$y - move_rcv_t$y[1])^2)
-    chain_rcv_t$D2 <- sqrt((chain_rcv_t$x - move_rcv_t$x[2])^2 + (chain_rcv_t$y - move_rcv_t$y[2])^2)
-    chain_rcv_t$D3 <- sqrt((chain_rcv_t$x - move_rcv_t$x[3])^2 + (chain_rcv_t$y - move_rcv_t$y[3])^2)
-    chain_rcv_t$D4 <- sqrt((chain_rcv_t$x - move_rcv_t$x[4])^2 + (chain_rcv_t$y - move_rcv_t$y[4])^2)
-    chain_rcv_t$D5 <- sqrt((chain_rcv_t$x - move_rcv_t$x[5])^2 + (chain_rcv_t$y - move_rcv_t$y[5])^2)
-    chain_rcv_t$D6 <- sqrt((chain_rcv_t$x - move_rcv_t$x[6])^2 + (chain_rcv_t$y - move_rcv_t$y[6])^2)
+    chain_rcv_t$D1 <- sqrt((chain_rcv_t$x - move_max3$x[1])^2 + (chain_rcv_t$y - move_max3$y[1])^2)
+    chain_rcv_t$D2 <- sqrt((chain_rcv_t$x - move_max3$x[2])^2 + (chain_rcv_t$y - move_max3$y[2])^2)
+    chain_rcv_t$D3 <- sqrt((chain_rcv_t$x - move_max3$x[3])^2 + (chain_rcv_t$y - move_max3$y[3])^2)
+    chain_rcv_t$D4 <- sqrt((chain_rcv_t$x - move_max3$x[4])^2 + (chain_rcv_t$y - move_max3$y[4])^2)
+    chain_rcv_t$D5 <- sqrt((chain_rcv_t$x - move_max3$x[5])^2 + (chain_rcv_t$y - move_max3$y[5])^2)
+    chain_rcv_t$D6 <- sqrt((chain_rcv_t$x - move_max3$x[6])^2 + (chain_rcv_t$y - move_max3$y[6])^2)
 
     # Computing the observed utility for each party (This is where we specify utility functions)
     chain_rcv_t$V1 <- -1 * c * chain_rcv_t$D1 - b * m1 + eps1
@@ -916,7 +916,7 @@ neodowns <- function(data,
     # ============================================================================#
 
     new_theta_rcv_t <- NA # Initialize
-    move_rcv_t$new_dist <- NA # Initialize
+    move_max3$new_dist <- NA # Initialize
     for (i in 1:6) {
       # For moderate parties
       if (i < 4) {
@@ -927,10 +927,10 @@ neodowns <- function(data,
         runif(n = 1, min = theta_rcv_t[i] + 90, max = theta_rcv_t[i] + 270)
         ) # New position on the other side
 
-        move_rcv_t$x[i] <- move_rcv_t$x[i] + cos(new_theta_rcv_t[i] / 180 * pi) * unit # Compute x-value given theta
-        move_rcv_t$y[i] <- move_rcv_t$y[i] + sin(new_theta_rcv_t[i] / 180 * pi) * unit # Compute y-value given theta
-        move_rcv_t$new_dist[i] <- sqrt((move_rcv_t$x[i] - 0)^2 + (move_rcv_t$y[i] - 0)^2) # New Distance
-        move_rcv_t$moderation[i] <- move_rcv_t$new_dist[i] / move_rcv_t$dist[i] # New Location / Initial Location
+        move_max3$x[i] <- move_max3$x[i] + cos(new_theta_rcv_t[i] / 180 * pi) * unit # Compute x-value given theta
+        move_max3$y[i] <- move_max3$y[i] + sin(new_theta_rcv_t[i] / 180 * pi) * unit # Compute y-value given theta
+        move_max3$new_dist[i] <- sqrt((move_max3$x[i] - 0)^2 + (move_max3$y[i] - 0)^2) # New Distance
+        move_max3$moderation[i] <- move_max3$new_dist[i] / move_max3$dist[i] # New Location / Initial Location
         theta_rcv_t[i] <- new_theta_rcv_t[i] # Update for the next iteration
 
         # For extreme parties
@@ -943,18 +943,18 @@ neodowns <- function(data,
         ) # New position on the other side
 
         # Updating party locations
-        propose_x <- move_rcv_t$x[i] + cos(new_theta_rcv_t[i] / 180 * pi) * unit # Compute x-value given theta
-        propose_y <- move_rcv_t$y[i] + sin(new_theta_rcv_t[i] / 180 * pi) * unit # Compute y-value given theta
-        move_rcv_t$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
+        propose_x <- move_max3$x[i] + cos(new_theta_rcv_t[i] / 180 * pi) * unit # Compute x-value given theta
+        propose_y <- move_max3$y[i] + sin(new_theta_rcv_t[i] / 180 * pi) * unit # Compute y-value given theta
+        move_max3$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
 
         if (force == TRUE) {
           while_iter <- 1
           # Change the direction until extreme parties become more extreme than moderate parties
-          while (move_rcv_t$new_dist[i] < move_rcv_t$new_dist[i - 3] & while_iter <= while_max) {
+          while (move_max3$new_dist[i] < move_max3$new_dist[i - 3] & while_iter <= while_max) {
             new_theta_rcv_t[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
-            propose_x <- move_rcv_t$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
-            propose_y <- move_rcv_t$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
-            move_rcv_t$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
+            propose_x <- move_max3$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
+            propose_y <- move_max3$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
+            move_max3$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
 
             while_iter <- while_iter + 1
           } # Close while () loop
@@ -964,32 +964,32 @@ neodowns <- function(data,
 
           # If extreme parties cannot find a way out, STAY
           if (while_iter == while_max) {
-            propose_x <- move$x[i]
-            propose_y <- move$y[i]
+            propose_x <- move_max1$x[i]
+            propose_y <- move_max1$y[i]
           }
         } # Closing the Assumption 1 condition
 
-        move_rcv_t$x[i] <- propose_x # Saving the accepted location
-        move_rcv_t$y[i] <- propose_y # Saving the accepted location
+        move_max3$x[i] <- propose_x # Saving the accepted location
+        move_max3$y[i] <- propose_y # Saving the accepted location
 
-        move_rcv_t$moderation[i] <- move_rcv_t$new_dist[i] / move_rcv_t$dist[i] # New Location / Initial Location
+        move_max3$moderation[i] <- move_max3$new_dist[i] / move_max3$dist[i] # New Location / Initial Location
         theta_rcv_t[i] <- new_theta_rcv_t[i] # Update for the next iteration
       } # Close else{}
     } # Close for () loop
 
 
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Keep Track of Party Positions
+    # Keep cands_max1 of Party Positions
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
 
-    move$iter <- t
-    move_rcv$iter <- t
-    move_rcv_t$iter <- t
+    move_max1$iter <- t
+    move_max2$iter <- t
+    move_max3$iter <- t
 
     # Save candidate information
-    track[[t]] <- move
-    track_rcv[[t]] <- move_rcv
-    track_rcv_t[[t]] <- move_rcv_t
+    cands_max1[[t]] <- move_max1
+    cands_max2[[t]] <- move_max2
+    cands_max3[[t]] <- move_max3
 
     # Save voter information
     chain$iter <- t
@@ -1000,17 +1000,17 @@ neodowns <- function(data,
     voter_max3[[t]] <- chain_rcv_t
 
     # # Ideological polarization
-    # delta[t] <- mean(move$moderation)
-    # delta_rcv[t] <- mean(move_rcv$moderation)
-    # delta_rcv_t[t] <- mean(move_rcv_t$moderation)
+    # delta[t] <- mean(move_max1$moderation)
+    # delta_rcv[t] <- mean(move_max2$moderation)
+    # delta_rcv_t[t] <- mean(move_max3$moderation)
 
     # ## By parties
-    # delta_md[t] <- mean(move$moderation[move$type == "mod"])
-    # delta_rcv_md[t] <- mean(move_rcv$moderation[move$type == "mod"])
-    # delta_rcv_t_md[t] <- mean(move_rcv_t$moderation[move$type == "mod"])
-    # delta_ex[t] <- mean(move$moderation[move$type == "ext"])
-    # delta_rcv_ex[t] <- mean(move_rcv$moderation[move$type == "ext"])
-    # delta_rcv_t_ex[t] <- mean(move_rcv_t$moderation[move$type == "ext"])
+    # delta_md[t] <- mean(move_max1$moderation[move_max1$type == "mod"])
+    # delta_rcv_md[t] <- mean(move_max2$moderation[move_max1$type == "mod"])
+    # delta_rcv_t_md[t] <- mean(move_max3$moderation[move_max1$type == "mod"])
+    # delta_ex[t] <- mean(move_max1$moderation[move_max1$type == "ext"])
+    # delta_rcv_ex[t] <- mean(move_max2$moderation[move_max1$type == "ext"])
+    # delta_rcv_t_ex[t] <- mean(move_max3$moderation[move_max1$type == "ext"])
 
 
 
@@ -1024,40 +1024,40 @@ neodowns <- function(data,
     # epsilon_rcv_t_2[t] <- mean(chain_rcv_t$epsilon2) / mean(init$epsilon2)
     # epsilon_rcv_t_3[t] <- mean(chain_rcv_t$epsilon3) / mean(init$epsilon3)
 
-    # # For keeping track of each patty's location
-    # dist_Am[t] <- move$new_dist[1]
-    # dist_Ae[t] <- move$new_dist[1 + 3]
-    # dist_Bm[t] <- move$new_dist[2]
-    # dist_Be[t] <- move$new_dist[2 + 3]
-    # dist_Cm[t] <- move$new_dist[3]
-    # dist_Ce[t] <- move$new_dist[3 + 3]
+    # # For keeping cands_max1 of each patty's location
+    # dist_Am[t] <- move_max1$new_dist[1]
+    # dist_Ae[t] <- move_max1$new_dist[1 + 3]
+    # dist_Bm[t] <- move_max1$new_dist[2]
+    # dist_Be[t] <- move_max1$new_dist[2 + 3]
+    # dist_Cm[t] <- move_max1$new_dist[3]
+    # dist_Ce[t] <- move_max1$new_dist[3 + 3]
     #
-    # dist_rcvAm[t] <- move_rcv$new_dist[1]
-    # dist_rcvAe[t] <- move_rcv$new_dist[1 + 3]
-    # dist_rcvBm[t] <- move_rcv$new_dist[2]
-    # dist_rcvBe[t] <- move_rcv$new_dist[2 + 3]
-    # dist_rcvCm[t] <- move_rcv$new_dist[3]
-    # dist_rcvCe[t] <- move_rcv$new_dist[3 + 3]
+    # dist_rcvAm[t] <- move_max2$new_dist[1]
+    # dist_rcvAe[t] <- move_max2$new_dist[1 + 3]
+    # dist_rcvBm[t] <- move_max2$new_dist[2]
+    # dist_rcvBe[t] <- move_max2$new_dist[2 + 3]
+    # dist_rcvCm[t] <- move_max2$new_dist[3]
+    # dist_rcvCe[t] <- move_max2$new_dist[3 + 3]
     #
-    # dist_rcv_tAm[t] <- move_rcv_t$new_dist[1]
-    # dist_rcv_tAe[t] <- move_rcv_t$new_dist[1 + 3]
-    # dist_rcv_tBm[t] <- move_rcv_t$new_dist[2]
-    # dist_rcv_tBe[t] <- move_rcv_t$new_dist[2 + 3]
-    # dist_rcv_tCm[t] <- move_rcv_t$new_dist[3]
-    # dist_rcv_tCe[t] <- move_rcv_t$new_dist[3 + 3]
+    # dist_rcv_tAm[t] <- move_max3$new_dist[1]
+    # dist_rcv_tAe[t] <- move_max3$new_dist[1 + 3]
+    # dist_rcv_tBm[t] <- move_max3$new_dist[2]
+    # dist_rcv_tBe[t] <- move_max3$new_dist[2 + 3]
+    # dist_rcv_tCm[t] <- move_max3$new_dist[3]
+    # dist_rcv_tCe[t] <- move_max3$new_dist[3 + 3]
 
     # # For checking the violetion of Assumption 1
-    # check_A[t] <- move$new_dist[4] > move$new_dist[1]
-    # check_B[t] <- move$new_dist[5] > move$new_dist[2]
-    # check_C[t] <- move$new_dist[6] > move$new_dist[3]
+    # check_A[t] <- move_max1$new_dist[4] > move_max1$new_dist[1]
+    # check_B[t] <- move_max1$new_dist[5] > move_max1$new_dist[2]
+    # check_C[t] <- move_max1$new_dist[6] > move_max1$new_dist[3]
     #
-    # check_rcvA[t] <- move_rcv$new_dist[4] > move_rcv$new_dist[1]
-    # check_rcvB[t] <- move_rcv$new_dist[5] > move_rcv$new_dist[2]
-    # check_rcvC[t] <- move_rcv$new_dist[6] > move_rcv$new_dist[3]
+    # check_rcvA[t] <- move_max2$new_dist[4] > move_max2$new_dist[1]
+    # check_rcvB[t] <- move_max2$new_dist[5] > move_max2$new_dist[2]
+    # check_rcvC[t] <- move_max2$new_dist[6] > move_max2$new_dist[3]
     #
-    # check_rcv_tA[t] <- move_rcv_t$new_dist[4] > move_rcv_t$new_dist[1]
-    # check_rcv_tB[t] <- move_rcv_t$new_dist[5] > move_rcv_t$new_dist[2]
-    # check_rcv_tC[t] <- move_rcv_t$new_dist[6] > move_rcv_t$new_dist[3]
+    # check_rcv_tA[t] <- move_max3$new_dist[4] > move_max3$new_dist[1]
+    # check_rcv_tB[t] <- move_max3$new_dist[5] > move_max3$new_dist[2]
+    # check_rcv_tC[t] <- move_max3$new_dist[6] > move_max3$new_dist[3]
   }
 
   # END OF t loop #############################################################################
@@ -1075,17 +1075,17 @@ neodowns <- function(data,
   # ) %>%
   #   dplyr::filter(iter != 1)
 
-  track[[1]] <- d_cands %>%
+  cands_max1[[1]] <- d_cands %>%
     mutate(moderation = 1,
            new_dist = dist,
            iter = 1)
 
-  track_rcv[[1]] <- d_cands %>%
+  cands_max2[[1]] <- d_cands %>%
     mutate(moderation = 1,
            new_dist = dist,
            iter = 1)
 
-  track_rcv_t[[1]] <- d_cands %>%
+  cands_max3[[1]] <- d_cands %>%
     mutate(moderation = 1,
            new_dist = dist,
            iter = 1)
@@ -1095,15 +1095,15 @@ neodowns <- function(data,
   #          new_dist = dist,
   #          iter = 1)
 
-  track_max1 <- as.data.frame(do.call(rbind, track)) %>%
+  cands_max1 <- as.data.frame(do.call(rbind, cands_max1)) %>%
     mutate(system = "max1")
-  track_max2 <- as.data.frame(do.call(rbind, track_rcv)) %>%
+  cands_max2 <- as.data.frame(do.call(rbind, cands_max2)) %>%
     mutate(system = "max2")
-  track_max3 <- as.data.frame(do.call(rbind, track_rcv_t)) %>%
+  cands_max3 <- as.data.frame(do.call(rbind, cands_max3)) %>%
     mutate(system = "max3")
 
   # combine all results
-  track <- rbind(track_max1, track_max2, track_max3) %>%
+  cands_chains <- rbind(cands_max1, cands_max2, cands_max3) %>%
     tibble()
 
 
@@ -1120,7 +1120,7 @@ neodowns <- function(data,
 
   out <- list(
     voters = voter_chains,
-    cands = track
+    cands = cands_chains
   )
 
   return(out)
