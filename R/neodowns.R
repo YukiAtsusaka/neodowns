@@ -993,6 +993,9 @@ neodowns <- function(data,
     track_rcv_t[[t]] <- move_rcv_t
 
     # Save voter information
+    chain$iter <- t
+    chain_rcv$iter <- t
+    chain_rcv_t$iter <- t
     voter_max1[[t]] <- chain
     voter_max2[[t]] <- chain_rcv
     voter_max3[[t]] <- chain_rcv_t
