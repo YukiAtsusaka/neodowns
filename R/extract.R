@@ -14,7 +14,7 @@ extract <- function(out,
                     quantity
                     ) {
 
-if(quantity %in% c("ideology")){}
+if(quantity %in% c("ideology", "ethnic")){}
   else{print("Error: quantitiy must be `ideology` ")}
 
 
