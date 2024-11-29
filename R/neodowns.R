@@ -36,7 +36,7 @@ neodowns <- function(data,
                      boost = 6,
                      seed = 14231) {
 
-  # Set up
+# Set up -----------------------------------------------------------------------
   set.seed(seed)
 
   d_voters <- data$gen_voters
@@ -46,13 +46,15 @@ neodowns <- function(data,
   n_iter <- n_iter
   J <- dim(d_cands)[1] # number of candidates
 
-
-  # Feeding the voter distribution to "initial chain" for both systems
-  init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
-
   # Fixed parameters, created outside chains
   N_voters <- dim(d_voters)[1]
   m_vec <- rep(1:(J/2), 2) # used in J-loop
+
+
+# Chain initialization ---------------------------------------------------------
+
+  # Feeding the voter distribution to "initial chain" for both systems
+  init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
 
   init <- init %>%
     mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
@@ -395,11 +397,11 @@ neodowns <- function(data,
     incomplete = "-", # Incomplete bar character
     current = ">",    # Current bar character
     clear = FALSE,    # If TRUE, clears the bar when finish
-    width = 100
-  ) # Width of the progress bar
+    width = 100       # Width of the progress bar
+  )
 
 
-  # BEGINNING OF t loop ########################################################################
+# Loop for Markov Chains -------------------------------------------------------
   # Iterating Updates
   iter <- 1
   for (t in 2:n_iter) {
@@ -921,9 +923,10 @@ neodowns <- function(data,
 
   }
 
-  # END OF t loop #############################################################################
+  # END OF t loop
 
 
+# Summarizing results ----------------------------------------------------------
 
   cands_max1[[1]] <- d_cands %>%
     mutate(moderation = 1,
