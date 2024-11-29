@@ -401,9 +401,8 @@ neodowns <- function(data,
   # ========================================================================#
 
   iter <- NA
-  track <- list()
-  track_rcv <- list()
-  track_rcv_t <- list()
+  track <- track_rcv <- track_rcv_t <- list()
+  voter_max1 <- voter_max2 <- voter_max3 <- list()
   new_theta <- NA
   new_theta_rcv <- NA
   new_theta_rcv_t <- NA
@@ -988,9 +987,15 @@ neodowns <- function(data,
     move_rcv$iter <- t
     move_rcv_t$iter <- t
 
+    # Save candidate information
     track[[t]] <- move
     track_rcv[[t]] <- move_rcv
     track_rcv_t[[t]] <- move_rcv_t
+
+    # Save voter information
+    voter_max1[[t]] <- chain
+    voter_max2[[t]] <- chain_rcv
+    voter_max3[[t]] <- chain_rcv_t
 
     # Ideological polarization
     delta[t] <- mean(move$moderation)
@@ -1083,6 +1088,11 @@ neodowns <- function(data,
            new_dist = dist,
            iter = 1)
 
+  # voter_max1[[1]] <- init %>%
+  #   mutate(moderation = 1,
+  #          new_dist = dist,
+  #          iter = 1)
+
   track_max1 <- as.data.frame(do.call(rbind, track)) %>%
     mutate(system = "max1")
   track_max2 <- as.data.frame(do.call(rbind, track_rcv)) %>%
@@ -1095,7 +1105,19 @@ neodowns <- function(data,
     tibble()
 
 
+  voter_max1 <- as.data.frame(do.call(rbind, voter_max1)) %>%
+    mutate(system = "max1")
+  voter_max2 <- as.data.frame(do.call(rbind, voter_max2)) %>%
+    mutate(system = "max2")
+  voter_max3 <- as.data.frame(do.call(rbind, voter_max3)) %>%
+    mutate(system = "max3")
+
+  # combine all results
+  voter_chains <- dplyr::bind_rows(voter_max1, voter_max2, voter_max3) %>%
+    tibble()
+
   out <- list(
+    voters = voter_chains,
     cands = track
   )
 
