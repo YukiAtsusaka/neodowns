@@ -76,39 +76,6 @@ neodowns <- function(data,
 
   init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
 
-  # c <- init$effect_space # temporary
-  # b <- init$effect_group # temporary
-
-  # isseue with c
-  # must change the later part simultanesouly
-
-  # c <- rnorm(n = N_voters, mean = mu_c, sd = sigma_c)
-  # b <- rnorm(n = N_voters, mean = mu_b, sd = sigma_b)
-
-
-  # # Mismatch Indicator
-  # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  # m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  # m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  # m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  # m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  # m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  #
-  # # Random Errors, created outside chains
-  # eps1 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps2 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps3 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps4 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps5 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps6 <- rnorm(n = N_voters, sd = eps_sd)
-
-  # # Computing the observed utility for each party (This is where we specify utility functions)
-  # init$V1 <- -1 * c * init$D1 - b * m1 + eps1
-  # init$V2 <- -1 * c * init$D2 - b * m2 + eps2
-  # init$V3 <- -1 * c * init$D3 - b * m3 + eps3
-  # init$V4 <- -1 * c * init$D4 - b * m4 + eps4
-  # init$V5 <- -1 * c * init$D5 - b * m5 + eps5
-  # init$V6 <- -1 * c * init$D6 - b * m6 + eps6
 
   # (1): FPTP
   # Computing the first-choice probability that each voter votes for each party
@@ -116,7 +83,6 @@ neodowns <- function(data,
   init <- init %>%
     mutate(V_den = rowSums(select(., starts_with("exp_V"))))
 
-#  V_den <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6)
 
   for (j in 1:J) {
 
@@ -125,35 +91,17 @@ neodowns <- function(data,
       )
   }
 
-  # init$P1 <- exp(init$V1) / V_den
-  # init$P2 <- exp(init$V2) / V_den
-  # init$P3 <- exp(init$V3) / V_den
-  # init$P4 <- exp(init$V4) / V_den
-  # init$P5 <- exp(init$V5) / V_den
-  # init$P6 <- exp(init$V6) / V_den
 
-  # # Probability of co-ethnic voting for each voter
-  # init$epsilon1 <- case_when(
-  #   init$ethnic_group == "Group 1" ~ init$P1 + init$P4,
-  #   init$ethnic_group == "Group 2" ~ init$P2 + init$P5,
-  #   init$ethnic_group == "Group 3" ~ init$P3 + init$P6
-  # )
+  init <- init %>%
+    mutate(check_prob = rowSums(select(., starts_with("P"))))
 
-  # # Check
-  # mean(is.na(init$epsilon1))
-  # hist(init$epsilon1)
+  try(if (mean(init$check_prob) != 1) stop("All choice probabilities do not sum up to one for some voters"))
+
 
   # Compute the first-choice probability score (sum of all support probabilities)
   P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
   P1_score_rcv <- P2_score_rcv <- P3_score_rcv <- P4_score_rcv <- P5_score_rcv <- P6_score_rcv <- NA
   P1_score_rcv_t <- P2_score_rcv_t <- P3_score_rcv_t <- P4_score_rcv_t <- P5_score_rcv_t <- P6_score_rcv_t <- NA
-
-  init <- init %>%
-    mutate(check_prob = rowSums(select(., starts_with("P"))))
-
-  try(if (mean(init$check_prob) != 1) stop("All choice probabilities do not sum up to one"))
-
-
 
   P1_score[1] <- sum(init$P1)
   P2_score[1] <- sum(init$P2)
@@ -464,21 +412,6 @@ neodowns <- function(data,
         )
     }
 
-    # chain$D1 <- sqrt((chain$x - move_max1$x[1])^2 + (chain$y - move_max1$y[1])^2)
-    # chain$D2 <- sqrt((chain$x - move_max1$x[2])^2 + (chain$y - move_max1$y[2])^2)
-    # chain$D3 <- sqrt((chain$x - move_max1$x[3])^2 + (chain$y - move_max1$y[3])^2)
-    # chain$D4 <- sqrt((chain$x - move_max1$x[4])^2 + (chain$y - move_max1$y[4])^2)
-    # chain$D5 <- sqrt((chain$x - move_max1$x[5])^2 + (chain$y - move_max1$y[5])^2)
-    # chain$D6 <- sqrt((chain$x - move_max1$x[6])^2 + (chain$y - move_max1$y[6])^2)
-    #
-    # # Computing the observed utility for each party (This is where we specify utility functions)
-    # chain$V1 <- -1 * c * chain$D1 - b * m1 + eps1
-    # chain$V2 <- -1 * c * chain$D2 - b * m2 + eps2
-    # chain$V3 <- -1 * c * chain$D3 - b * m3 + eps3
-    # chain$V4 <- -1 * c * chain$D4 - b * m4 + eps4
-    # chain$V5 <- -1 * c * chain$D5 - b * m5 + eps5
-    # chain$V6 <- -1 * c * chain$D6 - b * m6 + eps6
-
     # Computing the probability that each voter votes for each party (this is fixed)
     den <- exp(chain$V1) + exp(chain$V2) + exp(chain$V3) + exp(chain$V4) + exp(chain$V5) + exp(chain$V6)
 
@@ -581,22 +514,6 @@ neodowns <- function(data,
         )
     }
 
-#
-#     # Computing the Euclidean distance between parties and voters
-#     chain_rcv$D1 <- sqrt((chain_rcv$x - move_max2$x[1])^2 + (chain_rcv$y - move_max2$y[1])^2)
-#     chain_rcv$D2 <- sqrt((chain_rcv$x - move_max2$x[2])^2 + (chain_rcv$y - move_max2$y[2])^2)
-#     chain_rcv$D3 <- sqrt((chain_rcv$x - move_max2$x[3])^2 + (chain_rcv$y - move_max2$y[3])^2)
-#     chain_rcv$D4 <- sqrt((chain_rcv$x - move_max2$x[4])^2 + (chain_rcv$y - move_max2$y[4])^2)
-#     chain_rcv$D5 <- sqrt((chain_rcv$x - move_max2$x[5])^2 + (chain_rcv$y - move_max2$y[5])^2)
-#     chain_rcv$D6 <- sqrt((chain_rcv$x - move_max2$x[6])^2 + (chain_rcv$y - move_max2$y[6])^2)
-#
-#     # Computing the observed utility for each party (This is where we specify utility functions)
-#     chain_rcv$V1 <- -1 * c * chain_rcv$D1 - b * m1 + eps1
-#     chain_rcv$V2 <- -1 * c * chain_rcv$D2 - b * m2 + eps2
-#     chain_rcv$V3 <- -1 * c * chain_rcv$D3 - b * m3 + eps3
-#     chain_rcv$V4 <- -1 * c * chain_rcv$D4 - b * m4 + eps4
-#     chain_rcv$V5 <- -1 * c * chain_rcv$D5 - b * m5 + eps5
-#     chain_rcv$V6 <- -1 * c * chain_rcv$D6 - b * m6 + eps6
 
     # Computing the probability that each voter votes for each party (this is fixed)
     den <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6)
@@ -738,22 +655,6 @@ neodowns <- function(data,
         )
     }
 
-
-    # # Computing the Euclidean distance between parties and voters
-    # chain_rcv_t$D1 <- sqrt((chain_rcv_t$x - move_max3$x[1])^2 + (chain_rcv_t$y - move_max3$y[1])^2)
-    # chain_rcv_t$D2 <- sqrt((chain_rcv_t$x - move_max3$x[2])^2 + (chain_rcv_t$y - move_max3$y[2])^2)
-    # chain_rcv_t$D3 <- sqrt((chain_rcv_t$x - move_max3$x[3])^2 + (chain_rcv_t$y - move_max3$y[3])^2)
-    # chain_rcv_t$D4 <- sqrt((chain_rcv_t$x - move_max3$x[4])^2 + (chain_rcv_t$y - move_max3$y[4])^2)
-    # chain_rcv_t$D5 <- sqrt((chain_rcv_t$x - move_max3$x[5])^2 + (chain_rcv_t$y - move_max3$y[5])^2)
-    # chain_rcv_t$D6 <- sqrt((chain_rcv_t$x - move_max3$x[6])^2 + (chain_rcv_t$y - move_max3$y[6])^2)
-    #
-    # # Computing the observed utility for each party (This is where we specify utility functions)
-    # chain_rcv_t$V1 <- -1 * c * chain_rcv_t$D1 - b * m1 + eps1
-    # chain_rcv_t$V2 <- -1 * c * chain_rcv_t$D2 - b * m2 + eps2
-    # chain_rcv_t$V3 <- -1 * c * chain_rcv_t$D3 - b * m3 + eps3
-    # chain_rcv_t$V4 <- -1 * c * chain_rcv_t$D4 - b * m4 + eps4
-    # chain_rcv_t$V5 <- -1 * c * chain_rcv_t$D5 - b * m5 + eps5
-    # chain_rcv_t$V6 <- -1 * c * chain_rcv_t$D6 - b * m6 + eps6
 
     # Computing the probability that each voter votes for each party (this is fixed)
     den <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6)
@@ -973,9 +874,7 @@ neodowns <- function(data,
     } # Close for () loop
 
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Keep cands_max1 of Party Positions
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
+## Save information ------------------------------------------------------------
 
     move_max1$iter <- t
     move_max2$iter <- t
@@ -998,7 +897,7 @@ neodowns <- function(data,
 
   }
 
-  # END OF t loop
+# END OF t loop
 
 
 # Summarizing results ----------------------------------------------------------
@@ -1017,11 +916,6 @@ neodowns <- function(data,
     mutate(moderation = 1,
            new_dist = dist,
            iter = 1)
-
-  # voter_max1[[1]] <- init %>%
-  #   mutate(moderation = 1,
-  #          new_dist = dist,
-  #          iter = 1)
 
   cands_max1 <- as.data.frame(do.call(rbind, cands_max1)) %>%
     mutate(system = "max1")
