@@ -98,6 +98,8 @@ neodowns <- function(data,
   try(if (mean(init$check_prob) != 1) stop("All choice probabilities do not sum up to one for some voters"))
 
 
+  # RESUME FROM HERE
+
   # Compute the first-choice probability score (sum of all support probabilities)
   P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
   P1_score_rcv <- P2_score_rcv <- P3_score_rcv <- P4_score_rcv <- P5_score_rcv <- P6_score_rcv <- NA
@@ -397,11 +399,7 @@ neodowns <- function(data,
     pb$tick()
     iter[t] <- t
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # (1): FPTP
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Compute the voting probabilities again
-
+## (1): FPTP ===================================================================
 
     for (j in 1:J) {
       chain <- chain %>%
@@ -498,11 +496,7 @@ neodowns <- function(data,
     try(if (sum(P_vec[, 1]) != N_voters) stop("FPTP: 1st-choice probabilities do not sum up to one"))
 
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # (2): RCV -- Second Choice
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Compute the voting probabilities again
-
+## (2): RCV ====================================================================
 
     for (j in 1:J) {
 
@@ -640,10 +634,7 @@ neodowns <- function(data,
     } # Close for () loop
 
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # (3): RCV -- Third Choice
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Compute the voting probabilities again
+## (3): RCV ====================================================================
 
     for (j in 1:J) {
 
@@ -874,7 +865,7 @@ neodowns <- function(data,
     } # Close for () loop
 
 
-## Save information ------------------------------------------------------------
+## Save information ============================================================
 
     move_max1$iter <- t
     move_max2$iter <- t
