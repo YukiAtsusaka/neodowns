@@ -101,38 +101,67 @@ neodowns <- function(data,
   # RESUME FROM HERE
 
   # Compute the first-choice probability score (sum of all support probabilities)
+  # interpretation: the expected number of votes
+
   P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
   P1_score_rcv <- P2_score_rcv <- P3_score_rcv <- P4_score_rcv <- P5_score_rcv <- P6_score_rcv <- NA
   P1_score_rcv_t <- P2_score_rcv_t <- P3_score_rcv_t <- P4_score_rcv_t <- P5_score_rcv_t <- P6_score_rcv_t <- NA
 
-  P1_score[1] <- sum(init$P1)
-  P2_score[1] <- sum(init$P2)
-  P3_score[1] <- sum(init$P3)
-  P4_score[1] <- sum(init$P4)
-  P5_score[1] <- sum(init$P5)
-  P6_score[1] <- sum(init$P6)
-  P1_score_rcv[1] <- sum(init$P1)
-  P2_score_rcv[1] <- sum(init$P2)
-  P3_score_rcv[1] <- sum(init$P3)
-  P4_score_rcv[1] <- sum(init$P4)
-  P5_score_rcv[1] <- sum(init$P5)
-  P6_score_rcv[1] <- sum(init$P6)
-  P1_score_rcv_t[1] <- sum(init$P1)
-  P2_score_rcv_t[1] <- sum(init$P2)
-  P3_score_rcv_t[1] <- sum(init$P3)
-  P4_score_rcv_t[1] <- sum(init$P4)
-  P5_score_rcv_t[1] <- sum(init$P5)
-  P6_score_rcv_t[1] <- sum(init$P6)
+  exp_votes_max1 <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max2 <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max3 <- matrix(NA, nrow = n_iter, ncol = J)
 
-  # First-choice probabilities (for FPTP, RCV1, RCV2)
-  P_vec <- NA
-  P_vec_rcv <- NA
-  P_vec_rcv_t <- NA
-  P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
-  P_vec_rcv <- rbind(P1_score_rcv, P2_score_rcv, P3_score_rcv, P4_score_rcv, P5_score_rcv, P6_score_rcv)
-  P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
+  t <- 1  # first iteration
+
+
+for(j in 1:J){
+
+ exp_votes_max1[t, j] <- init %>%
+   dplyr::select(!! as.name(paste0("P",j))) %>%
+   sum()
+
+ exp_votes_max2[t, j] <- init %>%
+   dplyr::select(!! as.name(paste0("P",j))) %>%
+   sum()
+
+ exp_votes_max3[t, j] <- init %>%
+   dplyr::select(!! as.name(paste0("P",j))) %>%
+   sum()
+
+}
+
+  try(if (sum(exp_votes_max1[t,]) != N_voters) stop("Expected votes do not sum up to the number of voters"))
+
+  # P1_score[1] <- sum(init$P1)
+  # P2_score[1] <- sum(init$P2)
+  # P3_score[1] <- sum(init$P3)
+  # P4_score[1] <- sum(init$P4)
+  # P5_score[1] <- sum(init$P5)
+  # P6_score[1] <- sum(init$P6)
+  # P1_score_rcv[1] <- sum(init$P1)
+  # P2_score_rcv[1] <- sum(init$P2)
+  # P3_score_rcv[1] <- sum(init$P3)
+  # P4_score_rcv[1] <- sum(init$P4)
+  # P5_score_rcv[1] <- sum(init$P5)
+  # P6_score_rcv[1] <- sum(init$P6)
+  # P1_score_rcv_t[1] <- sum(init$P1)
+  # P2_score_rcv_t[1] <- sum(init$P2)
+  # P3_score_rcv_t[1] <- sum(init$P3)
+  # P4_score_rcv_t[1] <- sum(init$P4)
+  # P5_score_rcv_t[1] <- sum(init$P5)
+  # P6_score_rcv_t[1] <- sum(init$P6)
+
+  # # First-choice probabilities (for FPTP, RCV1, RCV2)
+  # P_vec <- NA
+  # P_vec_rcv <- NA
+  # P_vec_rcv_t <- NA
+  # P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
+  # P_vec_rcv <- rbind(P1_score_rcv, P2_score_rcv, P3_score_rcv, P4_score_rcv, P5_score_rcv, P6_score_rcv)
+  # P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
 
   # # CHECK: Sum of all first-choice probabilities: they need to sum up to N=1000
+
+
    # print(sum(P_vec)) # First-choice FPTP
    # print(sum(P_vec_rcv)) # First-choice RCV (only up to second)
    # print(sum(P_vec_rcv_t)) # First-choice RCV  (up to third)
@@ -380,6 +409,7 @@ neodowns <- function(data,
   new_theta_rcv <- NA
   new_theta_rcv_t <- NA
 
+# Loop for Markov Chains -------------------------------------------------------
 
   pb <- progress_bar$new(
     format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
@@ -391,8 +421,7 @@ neodowns <- function(data,
     width = 100       # Width of the progress bar
   )
 
-# Loop for Markov Chains -------------------------------------------------------
-  # Iterating Updates
+# Iterating Updates
   iter <- 1
   for (t in 2:n_iter) {
     # Updates the current state
