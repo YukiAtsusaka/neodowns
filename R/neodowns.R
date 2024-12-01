@@ -95,76 +95,32 @@ neodowns <- function(data,
   init <- init %>%
     mutate(check_prob = rowSums(select(., starts_with("P"))))
 
-  try(if (mean(init$check_prob) != 1) stop("All choice probabilities do not sum up to one for some voters"))
-
-
-  # RESUME FROM HERE
+  try(if (mean(init$check_prob) != 1)
+    stop("All choice probabilities do not sum up to one for some voters"))
 
   # Compute the first-choice probability score (sum of all support probabilities)
   # interpretation: the expected number of votes
 
-  P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
-  P1_score_rcv <- P2_score_rcv <- P3_score_rcv <- P4_score_rcv <- P5_score_rcv <- P6_score_rcv <- NA
-  P1_score_rcv_t <- P2_score_rcv_t <- P3_score_rcv_t <- P4_score_rcv_t <- P5_score_rcv_t <- P6_score_rcv_t <- NA
-
-  exp_votes_max1 <- matrix(NA, nrow = n_iter, ncol = J)
-  exp_votes_max2 <- matrix(NA, nrow = n_iter, ncol = J)
-  exp_votes_max3 <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max1_1st <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max2_1st <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max2_2nd <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max3_1st <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max3_2nd <- matrix(NA, nrow = n_iter, ncol = J)
+  exp_votes_max3_3rd <- matrix(NA, nrow = n_iter, ncol = J)
 
   t <- 1  # first iteration
 
 
 for(j in 1:J){
 
- exp_votes_max1[t, j] <- init %>%
-   dplyr::select(!! as.name(paste0("P",j))) %>%
-   sum()
-
- exp_votes_max2[t, j] <- init %>%
-   dplyr::select(!! as.name(paste0("P",j))) %>%
-   sum()
-
- exp_votes_max3[t, j] <- init %>%
+ exp_votes_max1_1st[t, j] <- init %>%
    dplyr::select(!! as.name(paste0("P",j))) %>%
    sum()
 
 }
 
-  try(if (sum(exp_votes_max1[t,]) != N_voters) stop("Expected votes do not sum up to the number of voters"))
-
-  # P1_score[1] <- sum(init$P1)
-  # P2_score[1] <- sum(init$P2)
-  # P3_score[1] <- sum(init$P3)
-  # P4_score[1] <- sum(init$P4)
-  # P5_score[1] <- sum(init$P5)
-  # P6_score[1] <- sum(init$P6)
-  # P1_score_rcv[1] <- sum(init$P1)
-  # P2_score_rcv[1] <- sum(init$P2)
-  # P3_score_rcv[1] <- sum(init$P3)
-  # P4_score_rcv[1] <- sum(init$P4)
-  # P5_score_rcv[1] <- sum(init$P5)
-  # P6_score_rcv[1] <- sum(init$P6)
-  # P1_score_rcv_t[1] <- sum(init$P1)
-  # P2_score_rcv_t[1] <- sum(init$P2)
-  # P3_score_rcv_t[1] <- sum(init$P3)
-  # P4_score_rcv_t[1] <- sum(init$P4)
-  # P5_score_rcv_t[1] <- sum(init$P5)
-  # P6_score_rcv_t[1] <- sum(init$P6)
-
-  # # First-choice probabilities (for FPTP, RCV1, RCV2)
-  # P_vec <- NA
-  # P_vec_rcv <- NA
-  # P_vec_rcv_t <- NA
-  # P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
-  # P_vec_rcv <- rbind(P1_score_rcv, P2_score_rcv, P3_score_rcv, P4_score_rcv, P5_score_rcv, P6_score_rcv)
-  # P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
-
-  # # CHECK: Sum of all first-choice probabilities: they need to sum up to N=1000
-
-
-   # print(sum(P_vec)) # First-choice FPTP
-   # print(sum(P_vec_rcv)) # First-choice RCV (only up to second)
-   # print(sum(P_vec_rcv_t)) # First-choice RCV  (up to third)
+  try(if (sum(exp_votes_max1_1st[t,]) != N_voters)
+    stop("Expected votes do not sum up to the number of voters"))
 
 
   # (1): RCV - Second Choice Probability
@@ -224,41 +180,23 @@ for(j in 1:J){
   # max(init$P6 + init$P6_s)
 
 
-  # Compute the SECOND-choice probability score (sum of all support probabilities)
-  P1_s_score <- NA
-  P2_s_score <- NA
-  P3_s_score <- NA
-  P4_s_score <- NA
-  P5_s_score <- NA
-  P6_s_score <- NA
-  P1_st_score <- NA
-  P2_st_score <- NA
-  P3_st_score <- NA
-  P4_st_score <- NA
-  P5_st_score <- NA
-  P6_st_score <- NA
+  for(j in 1:J){
 
-  P1_s_score[1] <- sum(init$P1_s)
-  P2_s_score[1] <- sum(init$P2_s)
-  P3_s_score[1] <- sum(init$P3_s)
-  P4_s_score[1] <- sum(init$P4_s)
-  P5_s_score[1] <- sum(init$P5_s)
-  P6_s_score[1] <- sum(init$P6_s)
-  P1_st_score[1] <- sum(init$P1_s)
-  P2_st_score[1] <- sum(init$P2_s)
-  P3_st_score[1] <- sum(init$P3_s)
-  P4_st_score[1] <- sum(init$P4_s)
-  P5_st_score[1] <- sum(init$P5_s)
-  P6_st_score[1] <- sum(init$P6_s)
+    exp_votes_max2_1st[t, j] <- init %>%
+      dplyr::select(!! as.name(paste0("P",j))) %>%
+      sum()
 
-  P_s_vec <- NA
-  P_st_vec <- NA
-  P_s_vec <- rbind(P1_s_score, P2_s_score, P3_s_score, P4_s_score, P5_s_score, P6_s_score)
-  P_st_vec <- rbind(P1_st_score, P2_st_score, P3_st_score, P4_st_score, P5_st_score, P6_st_score)
+    exp_votes_max2_2nd[t, j] <- init %>%
+      dplyr::select(!! as.name(paste0("P",j, "_s"))) %>%
+      sum()
 
-  # # They must sum up to N=1000
-  # print(sum(P_s_vec)) # GOOD
-  # print(sum(P_st_vec)) # GOOD
+  }
+
+  try(if (sum(exp_votes_max1_1st[t,]) != N_voters)
+    stop("Expected votes do not sum up to the number of voters"))
+
+  try(if (sum(exp_votes_max2_2nd[t,]) != N_voters)
+    stop("Expected votes do not sum up to the number of voters"))
 
 
   # (3): RCV - Third Choice Probability
@@ -366,22 +304,33 @@ for(j in 1:J){
   # max(init$P5 + init$P5_s + init$P5_t)
   # max(init$P6 + init$P6_s + init$P6_t)
 
-  # Compute the THIRD-choice probability score (sum of all support probabilities)
-  P1_tt_score <- NA
-  P2_tt_score <- NA
-  P3_tt_score <- NA
-  P4_tt_score <- NA
-  P5_tt_score <- NA
-  P6_tt_score <- NA
-  P1_tt_score[1] <- sum(init$P1_t)
-  P2_tt_score[1] <- sum(init$P2_t)
-  P3_tt_score[1] <- sum(init$P3_t)
-  P4_tt_score[1] <- sum(init$P4_t)
-  P5_tt_score[1] <- sum(init$P5_t)
-  P6_tt_score[1] <- sum(init$P6_t)
+  # # Compute the THIRD-choice probability score (sum of all support probabilities)
 
-  P_tt_vec <- NA
-  P_tt_vec <- rbind(P1_tt_score, P2_tt_score, P3_tt_score, P4_tt_score, P5_tt_score, P6_tt_score)
+  for(j in 1:J){
+
+    exp_votes_max3_1st[t, j] <- init %>%
+      dplyr::select(!! as.name(paste0("P",j))) %>%
+      sum()
+
+    exp_votes_max3_2nd[t, j] <- init %>%
+      dplyr::select(!! as.name(paste0("P",j, "_s"))) %>%
+      sum()
+
+    exp_votes_max3_3rd[t, j] <- init %>%
+      dplyr::select(!! as.name(paste0("P",j, "_t"))) %>%
+      sum()
+
+  }
+
+  try(if (sum(exp_votes_max3_1st[t,]) != N_voters)
+    stop("Expected votes do not sum up to the number of voters"))
+
+  try(if (sum(exp_votes_max3_2nd[t,]) != N_voters)
+    stop("Expected votes do not sum up to the number of voters"))
+
+  try(if (sum(exp_votes_max3_3rd[t,]) != N_voters)
+    stop("Expected votes do not sum up to the number of voters"))
+
 
   # # CHECK
   # print(sum(P_tt_vec)) # GOOD! It needs to be N=1000
@@ -450,18 +399,16 @@ for(j in 1:J){
     chain$P6 <- exp(chain$V6) / den
 
     # Compute the probability score (sum of all support probabilities)
-    P1_score[t] <- sum(chain$P1)
-    P2_score[t] <- sum(chain$P2)
-    P3_score[t] <- sum(chain$P3)
-    P4_score[t] <- sum(chain$P4)
-    P5_score[t] <- sum(chain$P5)
-    P6_score[t] <- sum(chain$P6)
+    for(j in 1:J){
 
-    P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
-    sum(P_vec[, t]) # This must sum up to N=1000
+      exp_votes_max1_1st[t, j] <- chain %>%
+        dplyr::select(!! as.name(paste0("P",j))) %>%
+        sum()
 
-    # CHECK
-    try(if (sum(P_vec[, 1]) != N_voters) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+    }
+
+    try(if (sum(exp_votes_max1_1st[t,]) != N_voters)
+      stop("Expected votes do not sum up to the number of voters"))
 
     # ============================================================================#
     #  Updating party locations
@@ -471,7 +418,7 @@ for(j in 1:J){
     for (i in 1:6) {
       # For Moderate Parties
       if (i < 4) {
-        new_theta[i] <- ifelse(P_vec[i, t] >= P_vec[i, t - 1], # If new position has higher prob score
+        new_theta[i] <- ifelse(exp_votes_max1_1st[t, i] >= exp_votes_max1_1st[t-1, i], # If new position has higher prob score
           theta[i], # Keep going
           runif(n = 1, min = theta[i] + 90, max = theta[i] + 270)
         ) # New position on the other side
@@ -485,7 +432,7 @@ for(j in 1:J){
 
         # For Extreme Parties
       } else {
-        new_theta[i] <- ifelse(P_vec[i, t] >= P_vec[i, t - 1], # If new position has higher prob score
+        new_theta[i] <- ifelse(exp_votes_max1_1st[t, i] >= exp_votes_max1_1st[t-1, i], # If new position has higher prob score
           theta[i], # Keep going
           runif(n = 1, min = theta[i] + 90, max = theta[i] + 270)
         ) # New position on the other side
@@ -521,8 +468,6 @@ for(j in 1:J){
         theta[i] <- new_theta[i] # Update for the next iteration
       } # Close else{}
     } # Close for () loop
-
-    try(if (sum(P_vec[, 1]) != N_voters) stop("FPTP: 1st-choice probabilities do not sum up to one"))
 
 
 ## (2): RCV ====================================================================
@@ -570,31 +515,25 @@ for(j in 1:J){
     chain_rcv$P6_s <- (exp(chain_rcv$V6) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V6) / V_den_ex2) * chain_rcv$P2 +
       (exp(chain_rcv$V6) / V_den_ex3) * chain_rcv$P3 + (exp(chain_rcv$V6) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V6) / V_den_ex5) * chain_rcv$P5
 
-
     # Compute the probability score (sum of all support probabilities)
-    P1_score_rcv[t] <- sum(chain_rcv$P1)
-    P2_score_rcv[t] <- sum(chain_rcv$P2)
-    P3_score_rcv[t] <- sum(chain_rcv$P3)
-    P4_score_rcv[t] <- sum(chain_rcv$P4)
-    P5_score_rcv[t] <- sum(chain_rcv$P5)
-    P6_score_rcv[t] <- sum(chain_rcv$P6)
 
-    # Compute the second-choice probability score (sum of all support probabilities)
-    P1_s_score[t] <- sum(chain_rcv$P1_s)
-    P2_s_score[t] <- sum(chain_rcv$P2_s)
-    P3_s_score[t] <- sum(chain_rcv$P3_s)
-    P4_s_score[t] <- sum(chain_rcv$P4_s)
-    P5_s_score[t] <- sum(chain_rcv$P5_s)
-    P6_s_score[t] <- sum(chain_rcv$P6_s)
+    for(j in 1:J){
 
-    P_vec_rcv <- rbind(P1_score_rcv, P2_score_rcv, P3_score_rcv, P4_score_rcv, P5_score_rcv, P6_score_rcv)
-    P_s_vec <- rbind(P1_s_score, P2_s_score, P3_s_score, P4_s_score, P5_s_score, P6_s_score)
+      exp_votes_max2_1st[t, j] <- chain_rcv %>%
+        dplyr::select(!! as.name(paste0("P",j))) %>%
+        sum()
 
-    # CHECK
-    try(if (sum(P_vec_rcv[, 1]) != N_voters)
-      stop("RCV1: 1st-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_s_vec[, 1]) != N_voters)
-      stop("RCV1: 2nd-choice ranking probabilities do not sum up to one"))
+      exp_votes_max2_2nd[t, j] <- chain_rcv %>%
+        dplyr::select(!! as.name(paste0("P",j, "_s"))) %>%
+        sum()
+
+    }
+
+    try(if (sum(exp_votes_max2_1st[t,]) != N_voters)
+      stop("Expected votes do not sum up to the number of voters"))
+
+    try(if (sum(exp_votes_max2_2nd[t,]) != N_voters)
+      stop("Expected votes do not sum up to the number of voters"))
 
 
     # ============================================================================#
@@ -606,8 +545,8 @@ for(j in 1:J){
     for (i in 1:6) {
       # For moderate parties
       if (i < 4) {
-        new_theta_rcv[i] <- ifelse(P_vec_rcv[i, t] >= P_vec_rcv[i, t - 1] &
-          P_s_vec[i, t] >= P_s_vec[i, t - 1], # If new position has higher 1st and 2nd choice probs
+        new_theta_rcv[i] <- ifelse(exp_votes_max2_1st[t, i] >= exp_votes_max2_1st[t-1, i] &
+                                   exp_votes_max2_2nd[t, i] >= exp_votes_max2_2nd[t-1, i], # If new position has higher 1st and 2nd choice probs
         theta_rcv[i], # Keep going
         runif(n = 1, min = theta_rcv[i] + 90, max = theta_rcv[i] + 270)
         ) # New position on the other side
@@ -620,8 +559,8 @@ for(j in 1:J){
 
         # For extreme parties
       } else {
-        new_theta_rcv[i] <- ifelse(P_vec_rcv[i, t] >= P_vec_rcv[i, t - 1] &
-          P_s_vec[i, t] >= P_s_vec[i, t - 1], # Extreme parties stay "extreme"
+        new_theta_rcv[i] <- ifelse(exp_votes_max2_1st[t, i] >= exp_votes_max2_1st[t-1, i] &
+                                   exp_votes_max2_2nd[t, i] >= exp_votes_max2_2nd[t-1, i], # If new position has higher 1st and 2nd choice probs, # Extreme parties stay "extreme"
         theta_rcv[i], # Keep going
         runif(n = 1, min = theta_rcv[i] + 90, max = theta_rcv[i] + 270)
         ) # New position on the other side
@@ -795,37 +734,32 @@ for(j in 1:J){
 
 
     # Compute the probability score (sum of all support probabilities)
-    P1_score_rcv_t[t] <- sum(chain_rcv_t$P1)
-    P2_score_rcv_t[t] <- sum(chain_rcv_t$P2)
-    P3_score_rcv_t[t] <- sum(chain_rcv_t$P3)
-    P4_score_rcv_t[t] <- sum(chain_rcv_t$P4)
-    P5_score_rcv_t[t] <- sum(chain_rcv_t$P5)
-    P6_score_rcv_t[t] <- sum(chain_rcv_t$P6)
 
-    # Compute the second-choice probability score (sum of all support probabilities)
-    P1_st_score[t] <- sum(chain_rcv_t$P1_s)
-    P2_st_score[t] <- sum(chain_rcv_t$P2_s)
-    P3_st_score[t] <- sum(chain_rcv_t$P3_s)
-    P4_st_score[t] <- sum(chain_rcv_t$P4_s)
-    P5_st_score[t] <- sum(chain_rcv_t$P5_s)
-    P6_st_score[t] <- sum(chain_rcv_t$P6_s)
+    for(j in 1:J){
 
-    # Compute the third-choice probability score (sum of all support probabilities)
-    P1_tt_score[t] <- sum(chain_rcv_t$P1_t)
-    P2_tt_score[t] <- sum(chain_rcv_t$P2_t)
-    P3_tt_score[t] <- sum(chain_rcv_t$P3_t)
-    P4_tt_score[t] <- sum(chain_rcv_t$P4_t)
-    P6_tt_score[t] <- sum(chain_rcv_t$P6_t)
-    P5_tt_score[t] <- sum(chain_rcv_t$P5_t)
+      exp_votes_max3_1st[t, j] <- chain_rcv_t %>%
+        dplyr::select(!! as.name(paste0("P",j))) %>%
+        sum()
 
-    P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
-    P_st_vec <- rbind(P1_st_score, P2_st_score, P3_st_score, P4_st_score, P5_st_score, P6_st_score)
-    P_tt_vec <- rbind(P1_tt_score, P2_tt_score, P3_tt_score, P4_tt_score, P5_tt_score, P6_tt_score)
+      exp_votes_max3_2nd[t, j] <- chain_rcv_t %>%
+        dplyr::select(!! as.name(paste0("P",j, "_s"))) %>%
+        sum()
 
-    # CHECK
-    try(if (sum(P_vec_rcv_t[, 1]) != N_voters) stop("RCV3: 1st-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_st_vec[, 1]) != N_voters) stop("RCV3: 2nd-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_tt_vec[, 1]) != N_voters) stop("RCV3: 3rd-choice ranking probabilities do not sum up to one"))
+      exp_votes_max3_3rd[t, j] <- chain_rcv_t %>%
+        dplyr::select(!! as.name(paste0("P",j, "_t"))) %>%
+        sum()
+
+    }
+
+    try(if (sum(exp_votes_max3_1st[t,]) != N_voters)
+      stop("Expected votes do not sum up to the number of voters"))
+
+    try(if (sum(exp_votes_max3_2nd[t,]) != N_voters)
+      stop("Expected votes do not sum up to the number of voters"))
+
+    try(if (sum(exp_votes_max3_3rd[t,]) != N_voters)
+      stop("Expected votes do not sum up to the number of voters"))
+
 
     # ============================================================================#
     #  Updating party locations
@@ -836,9 +770,9 @@ for(j in 1:J){
     for (i in 1:6) {
       # For moderate parties
       if (i < 4) {
-        new_theta_rcv_t[i] <- ifelse(P_vec_rcv_t[i, t] >= P_vec_rcv_t[i, t - 1] &
-          P_st_vec[i, t] >= P_st_vec[i, t - 1] &
-          P_tt_vec[i, t] >= P_tt_vec[i, t - 1], # If new position has higher 1st and 2nd choice probs
+        new_theta_rcv_t[i] <- ifelse(exp_votes_max3_1st[t, i] >= exp_votes_max3_1st[t-1, i] &
+                                     exp_votes_max3_2nd[t, i] >= exp_votes_max3_2nd[t-1, i] &
+                                     exp_votes_max3_3rd[t, i] >= exp_votes_max3_3rd[t-1, i], # If new position has higher 1st and 2nd choice probs
         theta_rcv_t[i], # Keep going
         runif(n = 1, min = theta_rcv_t[i] + 90, max = theta_rcv_t[i] + 270)
         ) # New position on the other side
@@ -851,9 +785,9 @@ for(j in 1:J){
 
         # For extreme parties
       } else {
-        new_theta_rcv_t[i] <- ifelse(P_vec_rcv_t[i, t] >= P_vec_rcv_t[i, t - 1] &
-          P_st_vec[i, t] >= P_st_vec[i, t - 1] &
-          P_tt_vec[i, t] >= P_tt_vec[i, t - 1], # Extreme parties stay "extreme"
+        new_theta_rcv_t[i] <- ifelse(exp_votes_max3_1st[t, i] >= exp_votes_max3_1st[t-1, i] &
+                                     exp_votes_max3_2nd[t, i] >= exp_votes_max3_2nd[t-1, i] &
+                                     exp_votes_max3_3rd[t, i] >= exp_votes_max3_3rd[t-1, i], # If new position has higher 1st and 2nd choice probs # Extreme parties stay "extreme"
         theta_rcv_t[i], # Keep going
         runif(n = 1, min = theta_rcv_t[i] + 90, max = theta_rcv_t[i] + 270)
         ) # New position on the other side
