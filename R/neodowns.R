@@ -55,8 +55,8 @@ neodowns <- function(data,
 
   # Feeding the voter distribution to "initial chain" for both systems
   d_voters <- d_voters %>%
-    mutate(param_c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
-           param_b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
+    mutate(effect_space = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
+           effect_group = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
 
   # Create distance for all candidate
 
@@ -66,17 +66,18 @@ neodowns <- function(data,
       mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
              "m{j}" := ifelse(d_voters$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
              "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
-             "V{j}" := -param_c * !! as.name(paste0("D",j))
-             -param_b * !! as.name(paste0("m",j))
-             + !! as.name(paste0("eps",j))
+             "V{j}" := -1 * effect_space * !! as.name(paste0("D",j))
+             -1 * effect_group * !! as.name(paste0("m",j))
+             + !! as.name(paste0("eps",j)),
+             "exp_V{j}" := exp(!! as.name(paste0("V",j)))
       )
   }
 
 
   init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
 
-  # c <- init$param_c # temporary
-  # b <- init$param_b # temporary
+  # c <- init$effect_space # temporary
+  # b <- init$effect_group # temporary
 
   # isseue with c
   # must change the later part simultanesouly
@@ -111,20 +112,32 @@ neodowns <- function(data,
 
   # (1): FPTP
   # Computing the first-choice probability that each voter votes for each party
-  V_den <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6)
-  init$P1 <- exp(init$V1) / V_den
-  init$P2 <- exp(init$V2) / V_den
-  init$P3 <- exp(init$V3) / V_den
-  init$P4 <- exp(init$V4) / V_den
-  init$P5 <- exp(init$V5) / V_den
-  init$P6 <- exp(init$V6) / V_den
 
-  # Probability of co-ethnic voting for each voter
-  init$epsilon1 <- case_when(
-    init$ethnic_group == "Group 1" ~ init$P1 + init$P4,
-    init$ethnic_group == "Group 2" ~ init$P2 + init$P5,
-    init$ethnic_group == "Group 3" ~ init$P3 + init$P6
-  )
+  init <- init %>%
+    mutate(V_den = rowSums(select(., starts_with("exp_V"))))
+
+#  V_den <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6)
+
+  for (j in 1:J) {
+
+    init <- init %>%
+      mutate("P{j}" := exp( !! as.name(paste0("V",j)))/V_den
+      )
+  }
+
+  # init$P1 <- exp(init$V1) / V_den
+  # init$P2 <- exp(init$V2) / V_den
+  # init$P3 <- exp(init$V3) / V_den
+  # init$P4 <- exp(init$V4) / V_den
+  # init$P5 <- exp(init$V5) / V_den
+  # init$P6 <- exp(init$V6) / V_den
+
+  # # Probability of co-ethnic voting for each voter
+  # init$epsilon1 <- case_when(
+  #   init$ethnic_group == "Group 1" ~ init$P1 + init$P4,
+  #   init$ethnic_group == "Group 2" ~ init$P2 + init$P5,
+  #   init$ethnic_group == "Group 3" ~ init$P3 + init$P6
+  # )
 
   # # Check
   # mean(is.na(init$epsilon1))
@@ -134,6 +147,14 @@ neodowns <- function(data,
   P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
   P1_score_rcv <- P2_score_rcv <- P3_score_rcv <- P4_score_rcv <- P5_score_rcv <- P6_score_rcv <- NA
   P1_score_rcv_t <- P2_score_rcv_t <- P3_score_rcv_t <- P4_score_rcv_t <- P5_score_rcv_t <- P6_score_rcv_t <- NA
+
+  init <- init %>%
+    mutate(check_prob = rowSums(select(., starts_with("P"))))
+
+  try(if (mean(init$check_prob) != 1) stop("All choice probabilities do not sum up to one"))
+
+
+
   P1_score[1] <- sum(init$P1)
   P2_score[1] <- sum(init$P2)
   P3_score[1] <- sum(init$P3)
@@ -162,9 +183,10 @@ neodowns <- function(data,
   P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
 
   # # CHECK: Sum of all first-choice probabilities: they need to sum up to N=1000
-  # print(sum(P_vec)) # First-choice FPTP
-  # print(sum(P_vec_rcv)) # First-choice RCV (only up to second)
-  # print(sum(P_vec_rcv_t)) # First-choice RCV  (up to third)
+   # print(sum(P_vec)) # First-choice FPTP
+   # print(sum(P_vec_rcv)) # First-choice RCV (only up to second)
+   # print(sum(P_vec_rcv_t)) # First-choice RCV  (up to third)
+
 
   # (1): RCV - Second Choice Probability
   # Computing the second-choice probability that each voter votes for each party
@@ -189,16 +211,33 @@ neodowns <- function(data,
   init$P6_s <- (exp(init$V6) / V_den_ex1) * init$P1 + (exp(init$V6) / V_den_ex2) * init$P2 +
     (exp(init$V6) / V_den_ex3) * init$P3 + (exp(init$V6) / V_den_ex4) * init$P4 + (exp(init$V6) / V_den_ex5) * init$P5
 
-  # # CHECK: mean should be 1
-  # mean(init$P1_s > 0 & init$P1_s < 1)
-  # mean(init$P2_s > 0 & init$P2_s < 1)
-  # mean(init$P3_s > 0 & init$P3_s < 1)
-  # mean(init$P4_s > 0 & init$P4_s < 1)
-  # mean(init$P5_s > 0 & init$P5_s < 1)
-  # mean(init$P6_s > 0 & init$P6_s < 1)
-  #
-  # # Check that maximum probability of choosing candidate 1 1st and choosing candidate 1 second does not exceeed 1
-  # max(init$P1 + init$P1_s)
+  # # # CHECK: mean should be 1
+  # try(if (mean(init$P1_s > 0 & init$P1_s < 1) != 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (mean(init$P2_s > 0 & init$P2_s < 1) != 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (mean(init$P3_s > 0 & init$P3_s < 1) != 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (mean(init$P4_s > 0 & init$P4_s < 1) != 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (mean(init$P5_s > 0 & init$P5_s < 1) != 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (mean(init$P6_s > 0 & init$P6_s < 1) != 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+
+
+#   mean(init$P2_s > 0 & init$P2_s < 1)
+#   mean(init$P3_s > 0 & init$P3_s < 1)
+#   mean(init$P4_s > 0 & init$P4_s < 1)
+#   mean(init$P5_s > 0 & init$P5_s < 1)
+#   mean(init$P6_s > 0 & init$P6_s < 1)
+
+  # Check that maximum probability of choosing candidate 1 1st and choosing candidate 1 second does not exceed 1
+
+  # try(if (max(init$P1 + init$P1_s) > 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (max(init$P2 + init$P1_s) > 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (max(init$P3 + init$P1_s) > 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (max(init$P4 + init$P1_s) > 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (max(init$P5 + init$P1_s) > 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+  # try(if (max(init$P6 + init$P1_s) > 1) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
+
+  # error in the fourth line
+  # --> not clear what it means
+
   # max(init$P2 + init$P2_s)
   # max(init$P3 + init$P3_s)
   # max(init$P4 + init$P4_s)
@@ -419,8 +458,8 @@ neodowns <- function(data,
     for (j in 1:J) {
       chain <- chain %>%
         mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-               "V{j}" := -param_c * !! as.name(paste0("D",j))
-               -param_b * !! as.name(paste0("m",j))
+               "V{j}" := -effect_space * !! as.name(paste0("D",j))
+               -effect_group * !! as.name(paste0("m",j))
                + !! as.name(paste0("eps",j))
         )
     }
@@ -536,8 +575,8 @@ neodowns <- function(data,
 
       chain_rcv <- chain_rcv %>%
         mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-               "V{j}" := -param_c * !! as.name(paste0("D",j))
-               -param_b * !! as.name(paste0("m",j))
+               "V{j}" := -effect_space * !! as.name(paste0("D",j))
+               -effect_group * !! as.name(paste0("m",j))
                + !! as.name(paste0("eps",j))
         )
     }
@@ -693,8 +732,8 @@ neodowns <- function(data,
 
       chain_rcv_t <- chain_rcv_t %>%
         mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-               "V{j}" := -param_c * !! as.name(paste0("D",j))
-               -param_b * !! as.name(paste0("m",j))
+               "V{j}" := -effect_space * !! as.name(paste0("D",j))
+               -effect_group * !! as.name(paste0("m",j))
                + !! as.name(paste0("eps",j))
         )
     }
