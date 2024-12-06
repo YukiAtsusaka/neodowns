@@ -415,9 +415,9 @@ for(j in 1:J){
     # ============================================================================#
     new_theta <- NA # Initialize
     move_max1$new_dist <- NA # Initialize
-    for (i in 1:6) {
+    for (i in 1:J) {
       # For Moderate Parties
-      if (i < 4) {
+      if (i <= (J/2)) {
         new_theta[i] <- ifelse(exp_votes_max1_1st[t, i] >= exp_votes_max1_1st[t-1, i], # If new position has higher prob score
           theta[i], # Keep going
           runif(n = 1, min = theta[i] + 90, max = theta[i] + 270)
@@ -445,7 +445,7 @@ for(j in 1:J){
         # Change the direction until extreme parties become more extreme than moderate parties
         if (force == TRUE) {
           while_iter <- 1
-          while (move_max1$new_dist[i] < move_max1$new_dist[i - 3] & while_iter <= while_max) {
+          while (move_max1$new_dist[i] < move_max1$new_dist[i - (J/2)] & while_iter <= while_max) {
             new_theta[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
             propose_x <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit * boost # Compute x-value given theta
             propose_y <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit * boost # Compute y-value given theta
@@ -542,9 +542,9 @@ for(j in 1:J){
 
     new_theta_rcv <- NA # Initialize
     move_max2$new_dist <- NA # Initialize
-    for (i in 1:6) {
+    for (i in 1:J) {
       # For moderate parties
-      if (i < 4) {
+      if (i <= (J/2)) {
         new_theta_rcv[i] <- ifelse(exp_votes_max2_1st[t, i] >= exp_votes_max2_1st[t-1, i] &
                                    exp_votes_max2_2nd[t, i] >= exp_votes_max2_2nd[t-1, i], # If new position has higher 1st and 2nd choice probs
         theta_rcv[i], # Keep going
@@ -573,7 +573,7 @@ for(j in 1:J){
         if (force == TRUE) {
           while_iter <- 1
           # Change the direction until extreme parties become more extreme than moderate parties
-          while (move_max2$new_dist[i] < move_max2$new_dist[i - 3] & while_iter <= while_max) {
+          while (move_max2$new_dist[i] < move_max2$new_dist[i - J/2] & while_iter <= while_max) {
             new_theta_rcv[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
             propose_x <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute x-value given theta
             propose_y <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute y-value given theta
@@ -767,9 +767,9 @@ for(j in 1:J){
 
     new_theta_rcv_t <- NA # Initialize
     move_max3$new_dist <- NA # Initialize
-    for (i in 1:6) {
+    for (i in 1:J) {
       # For moderate parties
-      if (i < 4) {
+      if (i <= (J/2)) {
         new_theta_rcv_t[i] <- ifelse(exp_votes_max3_1st[t, i] >= exp_votes_max3_1st[t-1, i] &
                                      exp_votes_max3_2nd[t, i] >= exp_votes_max3_2nd[t-1, i] &
                                      exp_votes_max3_3rd[t, i] >= exp_votes_max3_3rd[t-1, i], # If new position has higher 1st and 2nd choice probs
@@ -800,7 +800,7 @@ for(j in 1:J){
         if (force == TRUE) {
           while_iter <- 1
           # Change the direction until extreme parties become more extreme than moderate parties
-          while (move_max3$new_dist[i] < move_max3$new_dist[i - 3] & while_iter <= while_max) {
+          while (move_max3$new_dist[i] < move_max3$new_dist[i - (J/2)] & while_iter <= while_max) {
             new_theta_rcv_t[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
             propose_x <- move_max3$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
             propose_y <- move_max3$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
