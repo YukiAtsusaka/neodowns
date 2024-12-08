@@ -2,14 +2,18 @@
 % Please edit documentation in R/plot_burnin.R
 \name{plot_burnin}
 \alias{plot_burnin}
-\title{Plot candiate behavior inside and outside the burnin period}
+\title{Plot candidate behavior inside and outside the burn-in period}
 \usage{
-plot_burnin(out)
+plot_burnin(out, n_iter)
 }
 \arguments{
-\item{out}{Output from \code{neodowns}
-@return}
+\item{out}{Output from \code{neodowns}}
+
+\item{n_iter}{Number of iterations to plot}
+}
+\value{
+ggplot output
 }
 \description{
-\code{plot_burnin()} visualizes the sequence of candiate positions.
+\code{plot_burnin()} visualizes the sequence of candidate positions.
 }

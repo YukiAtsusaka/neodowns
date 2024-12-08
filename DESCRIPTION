@@ -22,7 +22,8 @@ Imports:
     extraDistr,
     ggforce,
     coda,
-    progress
+    progress,
+    ggplot2 (>= 3.0.0)
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
