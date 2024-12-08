@@ -2,6 +2,7 @@
 
 export(extract)
 export(neodowns)
+export(neodowns_prev)
 export(plot_burnin)
 export(sim_data)
 importFrom(VGAM,rrayleigh)
