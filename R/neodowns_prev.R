@@ -416,6 +416,9 @@ neodowns_prev <- function(data,
   check_rcv_tA <- check_rcv_tB <- check_rcv_tC <- NA # To Check if Extreme Parties stay extreme
 
 
+  cands_max1 <- cands_max2 <- cands_max3 <- list()
+
+
   pb <- progress_bar$new(
     format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
     total = n_iter,
@@ -1042,10 +1045,48 @@ neodowns_prev <- function(data,
     check_rcv_tA[t] <- move_rcv_t$new_dist[4] > move_rcv_t$new_dist[1]
     check_rcv_tB[t] <- move_rcv_t$new_dist[5] > move_rcv_t$new_dist[2]
     check_rcv_tC[t] <- move_rcv_t$new_dist[6] > move_rcv_t$new_dist[3]
+
+
+    # Save candidate information
+    cands_max1[[t]] <- move
+    cands_max2[[t]] <- move_rcv
+    cands_max3[[t]] <- move_rcv_t
+
+
   }
   # END OF t loop #############################################################################
   # ed <- Sys.time()
   # print(ed - st) # Total time to execute the loop
+
+
+
+  # Summarizing results ----------------------------------------------------------
+
+  cands_max1[[1]] <- gen_cands %>%
+    mutate(moderation = 1,
+           new_dist = dist,
+           iter = 1)
+
+  cands_max2[[1]] <- gen_cands %>%
+    mutate(moderation = 1,
+           new_dist = dist,
+           iter = 1)
+
+  cands_max3[[1]] <- gen_cands %>%
+    mutate(moderation = 1,
+           new_dist = dist,
+           iter = 1)
+
+  cands_max1 <- as.data.frame(do.call(rbind, cands_max1)) %>%
+    mutate(system = "max1")
+  cands_max2 <- as.data.frame(do.call(rbind, cands_max2)) %>%
+    mutate(system = "max2")
+  cands_max3 <- as.data.frame(do.call(rbind, cands_max3)) %>%
+    mutate(system = "max3")
+
+  # combine all results
+  cands_chains <- rbind(cands_max1, cands_max2, cands_max3) %>%
+    tibble()
 
   # Combining the summary statistics
   out <- tibble(
@@ -1059,6 +1100,11 @@ neodowns_prev <- function(data,
     check_A, check_B, check_C,
     check_rcvA, check_rcvB, check_rcvC,
     check_rcv_tA, check_rcv_tB, check_rcv_tC
+  )
+
+  out <- list(
+    voters = NA,
+    cands = cands_chains
   )
 
   return(out)
