@@ -4,12 +4,14 @@
 \alias{plot_burnin}
 \title{Plot candidate behavior inside and outside the burn-in period}
 \usage{
-plot_burnin(out, n_iter)
+plot_burnin(out, n_iter, n_show = 20)
 }
 \arguments{
 \item{out}{Output from \code{neodowns}}
 
 \item{n_iter}{Number of iterations to plot}
+
+\item{n_show}{Number of points to plot}
 }
 \value{
 ggplot output

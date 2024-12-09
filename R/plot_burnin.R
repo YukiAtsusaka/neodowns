@@ -4,6 +4,7 @@
 #'
 #' @param out Output from `neodowns`
 #' @param n_iter Number of iterations to plot
+#' @param n_show Number of points to plot
 #' @return ggplot output
 #' @importFrom dplyr `%>%` filter
 #' @importFrom ggplot2 ggplot aes geom_point geom_hline geom_vline scale_size scale_color_manual scale_shape_manual facet_wrap ylim xlim theme_minimal
@@ -14,11 +15,17 @@
 # library(ggplot2)
 
 plot_burnin <- function(out,
-                        n_iter){
+                        n_iter, # number of burn-ins
+                        n_show = 20  # number of points to plot
+                        ){
 
+# manual burn-in
+int <- n_iter / n_show
 
 out_cands <- out$cands %>%
-  filter(iter <= n_iter)
+    filter(iter <= n_iter,
+           iter %in% seq(1, n_iter, by = int))
+
 
 ggplot(out_cands, aes(x = x, y = y,
                       colour = party,
@@ -38,8 +45,8 @@ ggplot(out_cands, aes(x = x, y = y,
     ) +
   scale_shape_manual(values = c(1, 2, 0, 16, 17, 15)) +
   facet_wrap(~ system, ncol = 2) +
-  ylim(-4, 4) +
-  xlim(-4, 4) +
+  ylim(-3, 3) +
+  xlim(-3, 3) +
   theme_minimal() -> p
 
 return(p)

@@ -11,18 +11,27 @@
 #' @export
 
 extract <- function(out,
-                    quantity
+                    quantity,
+                    n_burn = 1000,
+                    int = 10
                     ) {
 
 if(quantity %in% c("ideology", "ethnic")){}
-  else{print("Error: quantitiy must be `ideology` ")}
+  else{print("Error: quantitiy must be `ideology` or `ethnic` ")}
+
+
+n_iter <- max(out$cands$iter)
+
+out_cands <- out$cands %>%
+    filter(iter > n_burn,
+           iter %in% seq(n_burn, n_iter, by = int))
 
 
 if(quantity == "ideology"){
 return(
-  out$cands %>%
+  out_cands %>%
     dplyr::group_by(system, iter) %>%
-    dplyr::summarise(mean(moderation))
+    dplyr::summarise(ideological_polar = mean(moderation))
 )
 }
 
