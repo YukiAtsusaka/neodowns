@@ -31,7 +31,7 @@ if(quantity == "ideology"){
 return(
   out_cands %>%
     dplyr::group_by(system, iter) %>%
-    dplyr::summarise(ideological_polar = mean(moderation))
+    dplyr::summarise(estimate = mean(moderation))
 )
 }
 

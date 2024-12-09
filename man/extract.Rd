@@ -4,7 +4,7 @@
 \alias{extract}
 \title{Extracting quantities of interest from computer simulations}
 \usage{
-extract(out, quantity)
+extract(out, quantity, n_burn = 1000, int = 10)
 }
 \arguments{
 \item{out}{output from \code{neodowns}}
