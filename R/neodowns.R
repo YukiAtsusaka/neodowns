@@ -17,7 +17,7 @@
 #' A list, which has the following components:
 #'  \item{d_voters}{a matrix containing the simulated ideological positions of voters.}
 #'  \item{d_cands}{a matrix containing the simulated ideological positions of candidates.}
-#' @importFrom dplyr case_when `%>%` mutate select left_join rename tibble filter bind_rows
+#' @importFrom dplyr case_when `%>%` mutate select left_join rename tibble filter bind_rows pull
 #' @importFrom progress progress_bar
 #' @importFrom rlang := !!
 #' @export
