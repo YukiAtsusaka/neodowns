@@ -8,10 +8,11 @@
 #' @importFrom ggplot2 ggplot aes geom_line facet_wrap theme_classic xlab ylab theme geom_density
 #' @export
 
-plot_trace <- function(out){
+plot_density <- function(out){
 
 out_list <- out %>%
   dplyr::bind_rows(.id = 'chain') %>%
+  filter(iter > 1000) %>% # burn-in
   tibble()
 
 mod <- out_list %>% filter(type == "mod")
