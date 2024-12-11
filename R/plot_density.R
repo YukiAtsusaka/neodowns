@@ -12,7 +12,6 @@ plot_density <- function(out){
 
 out_list <- out %>%
   dplyr::bind_rows(.id = 'chain') %>%
-  filter(iter > 1000) %>% # burn-in
   tibble()
 
 mod <- out_list %>% filter(type == "mod")
