@@ -10,35 +10,35 @@
 #' @importFrom dplyr mutate case_when `%>%` group_by summarise select ungroup
 #' @export
 
-
-extract_ideology <- function(out,
-                             n_burn = 1000,
-                             int = 10,
-                             subset = FALSE
-                    ) {
-
-n_iter <- max(out$cands$iter)
-
-out_cands <- out$cands %>%
-    filter(iter > n_burn,
-           iter %in% seq(n_burn, n_iter, by = int))
-
-if(subset == FALSE){
-
-out <- out_cands %>%
-  dplyr::group_by(system, iter) %>%
-  dplyr::summarise(estimate = mean(moderation))
-
-}else{
-
-  out <- out_cands %>%
-    dplyr::group_by(system, iter, type) %>%
-    dplyr::summarise(estimate = mean(moderation))
-}
-
-return(out)
-}
-
+#
+# extract_ideology <- function(out,
+#                              n_burn = 1000,
+#                              int = 10,
+#                              subset = FALSE
+#                     ) {
+#
+# n_iter <- max(out$cands$iter)
+#
+# out_cands <- out$cands %>%
+#     filter(iter > n_burn,
+#            iter %in% seq(n_burn, n_iter, by = int))
+#
+# if(subset == FALSE){
+#
+# out <- out_cands %>%
+#   dplyr::group_by(system, iter) %>%
+#   dplyr::summarise(estimate = mean(moderation))
+#
+# }else{
+#
+#   out <- out_cands %>%
+#     dplyr::group_by(system, iter, type) %>%
+#     dplyr::summarise(estimate = mean(moderation))
+# }
+#
+# return(out)
+# }
+#
 
 
 extract_ethnic_vote <- function(out,
