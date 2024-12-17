@@ -42,8 +42,9 @@
 
 
 extract_ethnic_vote <- function(out,
-                             n_burn = 1000,
-                             int = 10
+                                n_burn = 1000,
+                                int = 10,
+                                n_iter = 1000
                              ) {
 
   out <- out$voters %>%
