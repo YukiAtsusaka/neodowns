@@ -25,7 +25,7 @@
 
 sim_data <- function(N_voters = 1000,
                      N_groups = 3,
-                     skew = 0.6,
+                     skew = 0.3,
                      dev = 0.75,
                      dist = "Normal",
                      init = 1,
