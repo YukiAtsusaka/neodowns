@@ -1,6 +1,8 @@
 # `neodowns`: Simulating Candidate Competition in Group-Based Elections
 
-`neodowns` Performs computer simulations of candidate competition under different electoral systems based on the spatial model proposed in Atsusaka and Landsman (2024). Working Paper. \## Installation
+`neodowns` Performs computer simulations of candidate competition under different electoral systems based on the spatial model proposed in Atsusaka and Landsman (2024). Working Paper. 
+
+# Installation
 
 `neodowns` can be installed using the following code:
 
