@@ -74,8 +74,8 @@ neodowns <- function(data,
     mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
            b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
 
-  c <- init$c
-  b <- init$b
+  # c <- init$c
+  # b <- init$b
 
   # isseue with c
   # must change the later part simultanesouly
@@ -85,33 +85,44 @@ neodowns <- function(data,
 
   # Create distance for all candidate
 
-  for (j in 1:J) {
+  # for (j in 1:J) {
+  #
+  #   init <- init %>%
+  #     mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
+  #            "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
+  #            "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
+  #            "V{j}" := -c * !! as.name(paste0("D",j))
+  #            -b * !! as.name(paste0("m",j))
+  #            + !! as.name(paste0("eps",j))
+  #     )
+  # }
 
-    init <- init %>%
-      mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-             "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-             "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
-             "V{j}" := -c * !! as.name(paste0("D",j))
-             -b * !! as.name(paste0("m",j))
-             + !! as.name(paste0("eps",j))
-      )
+  for (j in seq_len(J)) {
+    D_j <- sqrt((init$x - d_cands$x[j])^2 + (init$y - d_cands$y[j])^2)
+    m_j <- ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0)
+    eps_j <- rnorm(n = N_voters, sd = eps_sd)
+    V_j <- -init$c * D_j - init$b * m_j + eps_j
+    init[[paste0("V", j)]] <- V_j
   }
 
-  # Mismatch Indicator
-  m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
 
-  # Random Errors, created outside chains
-  eps1 <- rnorm(n = N_voters, sd = eps_sd)
-  eps2 <- rnorm(n = N_voters, sd = eps_sd)
-  eps3 <- rnorm(n = N_voters, sd = eps_sd)
-  eps4 <- rnorm(n = N_voters, sd = eps_sd)
-  eps5 <- rnorm(n = N_voters, sd = eps_sd)
-  eps6 <- rnorm(n = N_voters, sd = eps_sd)
+
+
+  # # Mismatch Indicator
+  # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  # m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  # m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
+  # m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
+  # m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
+  # m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
+  #
+  # # Random Errors, created outside chains
+  # eps1 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps2 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps3 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps4 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps5 <- rnorm(n = N_voters, sd = eps_sd)
+  # eps6 <- rnorm(n = N_voters, sd = eps_sd)
 
   # # Computing the observed utility for each party (This is where we specify utility functions)
   # init$V1 <- -1 * c * init$D1 - b * m1 + eps1
