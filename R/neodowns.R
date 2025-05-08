@@ -24,7 +24,7 @@
 
 
 neodowns <- function(data,
-                     n_iter = 3000,
+                     n_iter = 100,
                      mu_c = 1, # average spatial voting
                      mu_b = 2, # average co-ethnic voting
                      sigma_c = 0.5,
@@ -36,19 +36,20 @@ neodowns <- function(data,
                      boost = 6,
                      seed = 14231) {
 
-# Only for debuggin
-  n_iter = 100
-  mu_c = 1 # average spatial voting
-  mu_b = 2 # average co-ethnic voting
-  sigma_c = 0.5
-  sigma_b = 0.5
-  eps_sd = 0.5
-  unit = 0.05
-  force = TRUE
-  while_max = 200
-  boost = 6
-  seed = 14231
-
+# # # # # Only for debuggin
+#   n_iter = 100
+#   mu_c = 1 # average spatial voting
+#   mu_b = 2 # average co-ethnic voting
+#   sigma_c = 0.5
+#   sigma_b = 0.5
+#   eps_sd = 0.5
+#   unit = 0.05
+#   force = TRUE
+#   while_max = 200
+#   boost = 6
+#   seed = 14231
+#
+# data <- sim_data()
 
 # Set up -----------------------------------------------------------------------
   set.seed(seed)
@@ -66,7 +67,7 @@ neodowns <- function(data,
 
 
   # Feeding the voter distribution to "initial chain" for both systems
-  init <- chain <- d_voters
+  init <- d_voters
 
   init <- init %>%
     mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
@@ -87,7 +88,6 @@ get_util_vs <- function(init, d_cands, N_voters, esp_sd){
     init[[paste0("V", j)]] <- V_j
   }
 
-
   # Choice probability
   V_mat <- as.matrix(init[, paste0("V", seq_len(J))])
   expV <- exp(V_mat)
@@ -104,215 +104,139 @@ get_util_vs <- function(init, d_cands, N_voters, esp_sd){
 
 
 # Return
- list(
-   init = init,
-   P_vec = P_vec
- )
+list(
+  init = init,
+  P_vec = P_vec
+)
 
 }
 
-out <- get_util_vs(init, d_cands, N_voters, esp_sd)
+
+update <- function(chain, d_cands, theta, unit = 0.05,
+                   p_before, p_now) {
+
+  J <- length(theta)
+  new_theta <- numeric(J)
 
 
+  for (j in seq_len(J)) {
 
+    # Determine whether to continue or reverse direction
+    improve <- p_now[j] >= p_before[j]
+    new_theta[j] <- if (improve) {
+      theta[j]
+    } else {
+      runif(1, min = theta[j] + 90, max = theta[j] + 270)
+    }
 
+    # Proposed new location
+    propose_x <- d_cands$x[j] + cos(new_theta[j] / 180 * pi) * unit
+    propose_y <- d_cands$y[j] + sin(new_theta[j] / 180 * pi) * unit
 
-  # ========================================================================#
-  # Updating party positions (initial move_max1)
-  move_max1 <- d_cands
-  theta <- runif(n = 6, min = 0, max = 360) # Generating random angels
-
-  move_max1$x <- d_cands$x + cos(theta / 180 * pi) * (unit / 2) # Compute x-value given theta SETTING THIS 0.01 (8/3/2022)
-  move_max1$y <- d_cands$y + sin(theta / 180 * pi) * (unit / 2) # Compute y-value given theta
-  move_max1$dist <- sqrt((move_max1$x - 0)^2 + (move_max1$y - 0)^2)
-  move_max1$moderation <- move_max1$dist / d_cands$dist
-
-  # ========================================================================#
-
-  iter <- NA
-  cands_max1 <- list()
-  voter_max1 <- list()
-  new_theta <- NA
-
-  pb <- progress_bar$new(
-    format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
-    total = n_iter,
-    complete = "=",   # Completion bar character
-    incomplete = "-", # Incomplete bar character
-    current = ">",    # Current bar character
-    clear = FALSE,    # If TRUE, clears the bar when finish
-    width = 100       # Width of the progress bar
-  )
-
-
-  # Loop for Markov Chains -------------------------------------------------------
-  # Iterating Updates
-  iter <- 1
-  for (t in 2:n_iter) {
-    # Updates the current state
-    pb$tick()
-    iter[t] <- t
-
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # (1): FPTP
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Compute the voting probabilities again
-
-    chain$D1 <- sqrt((chain$x - move_max1$x[1])^2 + (chain$y - move_max1$y[1])^2)
-    chain$D2 <- sqrt((chain$x - move_max1$x[2])^2 + (chain$y - move_max1$y[2])^2)
-    chain$D3 <- sqrt((chain$x - move_max1$x[3])^2 + (chain$y - move_max1$y[3])^2)
-    chain$D4 <- sqrt((chain$x - move_max1$x[4])^2 + (chain$y - move_max1$y[4])^2)
-    chain$D5 <- sqrt((chain$x - move_max1$x[5])^2 + (chain$y - move_max1$y[5])^2)
-    chain$D6 <- sqrt((chain$x - move_max1$x[6])^2 + (chain$y - move_max1$y[6])^2)
-
-    # Computing the observed utility for each party (This is where we specify utility functions)
-    chain$V1 <- -1 * c * chain$D1 - b * m1 + eps1
-    chain$V2 <- -1 * c * chain$D2 - b * m2 + eps2
-    chain$V3 <- -1 * c * chain$D3 - b * m3 + eps3
-    chain$V4 <- -1 * c * chain$D4 - b * m4 + eps4
-    chain$V5 <- -1 * c * chain$D5 - b * m5 + eps5
-    chain$V6 <- -1 * c * chain$D6 - b * m6 + eps6
-
-    # Computing the probability that each voter votes for each party (this is fixed)
-    den <- exp(chain$V1) + exp(chain$V2) + exp(chain$V3) + exp(chain$V4) + exp(chain$V5) + exp(chain$V6)
-
-    chain$P1 <- exp(chain$V1) / den
-    chain$P2 <- exp(chain$V2) / den
-    chain$P3 <- exp(chain$V3) / den
-    chain$P4 <- exp(chain$V4) / den
-    chain$P5 <- exp(chain$V5) / den
-    chain$P6 <- exp(chain$V6) / den
-
-    # Compute the probability score (sum of all support probabilities)
-    P1_score[t] <- sum(chain$P1)
-    P2_score[t] <- sum(chain$P2)
-    P3_score[t] <- sum(chain$P3)
-    P4_score[t] <- sum(chain$P4)
-    P5_score[t] <- sum(chain$P5)
-    P6_score[t] <- sum(chain$P6)
-
-    P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
-    sum(P_vec[, t]) # This must sum up to N=1000
-
-    # CHECK
-    try(if (sum(P_vec[, 1]) != N_voters) stop("FPTP: 1st-choice ranking probabilities do not sum up to one"))
-
-    # ============================================================================#
-    #  Updating party locations
-    # ============================================================================#
-    new_theta <- NA # Initialize
-    move_max1$new_dist <- NA # Initialize
-    for (i in 1:6) {
-      # For Moderate Parties
-      if (i < 4) {
-        new_theta[i] <- ifelse(P_vec[i, t] >= P_vec[i, t - 1], # If new position has higher prob score
-                               theta[i], # Keep going
-                               runif(n = 1, min = theta[i] + 90, max = theta[i] + 270)
-        ) # New position on the other side
-
-        move_max1$x[i] <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit # Compute x-value given theta
-        move_max1$y[i] <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit # Compute y-value given theta
-        move_max1$new_dist[i] <- sqrt((move_max1$x[i] - 0)^2 + (move_max1$y[i] - 0)^2) # New Distance
-        move_max1$moderation[i] <- move_max1$new_dist[i] / move_max1$dist[i] # New Location / Initial Location
-        theta[i] <- new_theta[i] # Update for the next iteration
-
-
-        # For Extreme Parties
-      } else {
-        new_theta[i] <- ifelse(P_vec[i, t] >= P_vec[i, t - 1], # If new position has higher prob score
-                               theta[i], # Keep going
-                               runif(n = 1, min = theta[i] + 90, max = theta[i] + 270)
-        ) # New position on the other side
-
-        # Updating party locations
-        propose_x <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit # Compute x-value given theta
-        propose_y <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit # Compute y-value given theta
-        move_max1$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
-
-        # Change the direction until extreme parties become more extreme than moderate parties
-        if (force == TRUE) {
-          while_iter <- 1
-          while (move_max1$new_dist[i] < move_max1$new_dist[i - 3] & while_iter <= while_max) {
-            new_theta[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
-            propose_x <- move_max1$x[i] + cos(new_theta[i] / 180 * pi) * unit * boost # Compute x-value given theta
-            propose_y <- move_max1$y[i] + sin(new_theta[i] / 180 * pi) * unit * boost # Compute y-value given theta
-            move_max1$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
-
-            while_iter <- while_iter + 1
-          } # Close while () loop
-
-          # If extreme parties cannot find a way out, STAY (NO move_max1)
-          if (while_iter == while_max) {
-            propose_x <- move_max1$x[i]
-            propose_y <- move_max1$y[i]
-          }
-        } # Closing Assumption 1 condition
-
-
-        move_max1$x[i] <- propose_x # Saving the accepted location
-        move_max1$y[i] <- propose_y # Saving the accepted location
-        move_max1$moderation[i] <- move_max1$new_dist[i] / move_max1$dist[i] # New Location / Initial Location
-        theta[i] <- new_theta[i] # Update for the next iteration
-      } # Close else{}
-    } # Close for () loop
-
-    try(if (sum(P_vec[, 1]) != N_voters) stop("FPTP: 1st-choice probabilities do not sum up to one"))
-
-
-
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Keep cands_max1 of Party Positions
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-
-    move_max1$iter <- t
-
-    # Save candidate information
-    cands_max1[[t]] <- move_max1
-
-
-    # Save voter information
-    chain$iter <- t
-    voter_max1[[t]] <- chain
-
-    iter[t] <- t
-
+    # Update candidate position
+    d_cands$x[j] <- propose_x
+    d_cands$y[j] <- propose_y
   }
 
-
-
-
-  # Summarizing results ----------------------------------------------------------
-
-  cands_max1[[1]] <- d_cands %>%
-    mutate(moderation = 1,
-           new_dist = dist,
-           iter = 1)
-
-  cands_max1 <- as.data.frame(do.call(rbind, cands_max1)) %>%
-    mutate(system = "max1")
-
-  # combine all results
-  cands_chains <- rbind(cands_max1) %>%
-    tibble()
-
-
-  voter_max1 <- as.data.frame(do.call(rbind, voter_max1)) %>%
-    mutate(system = "max1")
-
-  # combine all results
-  voter_chains <- dplyr::bind_rows(voter_max1) %>%
-    tibble()
-
-  out <- list(
-    voters = voter_chains,
-    cands = cands_chains
+  # Return
+  list(
+    d_cands = d_cands,
+    theta = new_theta
   )
-
-  return(out)
-
-  # FUTURE WORK: Add the summary table for each experiment
-  # ADD some warning based on "check"s
 }
+
+
+
+# Repeat the two functions
+
+pb <- progress_bar$new(
+      format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
+      total = n_iter,
+      complete = "=",   # Completion bar character
+      incomplete = "-", # Incomplete bar character
+      current = ">",    # Current bar character
+      clear = FALSE,    # If TRUE, clears the bar when finish
+      width = 100       # Width of the progress bar
+    )
+
+
+chain_voters <- list()
+chain_cands <- list()
+
+for (t in seq_len(n_iter)) {
+
+pb$tick()
+
+# initialization
+if(t == 1){
+
+  theta <- runif(n = J, min = 0, max = 360)
+  d_cands <- d_cands
+
+}else{
+  theta <- chain_cands[[t-1]]$theta
+  d_cands <- chain_cands[[t-1]]$d_cands
+
+}
+
+
+
+# Get voter utility and candidate vote share
+chain_voters[[t]] <- get_util_vs(init, d_cands,
+                                 N_voters, esp_sd)
+
+p_now <- chain_voters[[t]]$P_vec
+p_before <- if(t == 1){
+  chain_voters[[t]]$P_vec}else{
+    chain_voters[[t-1]]$P_vec
+    }
+
+
+# Update positions
+chain_cands[[t]] <- update(chain_voters[[t]]$init,
+                           d_cands,
+                           theta,
+                           unit = 0.05, p_before, p_now)
+
+# Record iteration
+chain_voters[[t]]$init$iter <- t
+chain_cands[[t]]$d_cands$iter <- t
+
+}
+
+
+
+# combine all results
+out_voters <- bind_rows(purrr::map(chain_voters, "init")) %>% tibble()
+out_cands <- bind_rows(purrr::map(chain_cands, "d_cands")) %>% tibble()
+
+
+out <- list(
+  voters = out_voters,
+  cands = out_cands
+)
+
+return(out)
+}
+
+
+# # # Check via visualization
+# out$cands %>%
+#   filter(iter > 1000) %>%
+# ggplot(aes(x = x, y = y, color = party, group = party)) +
+#   geom_path(linewidth = 0.01, arrow = arrow(type = "open", length = unit(0.15, "cm"))) +
+#   geom_point(alpha = 0.7, size = 0.05) +
+#   geom_point(data = subset(out$cands, iter == 1),
+#              shape = 21, fill = "black", size = 3, stroke = 1.2) +
+#   geom_text(data = subset(out$cands, iter == 1),
+#             aes(label = party), vjust = -1, size = 3, color = "black") +
+#   labs(
+#     title = "Trajectory of Candidate Positions Over Iterations",
+#     x = "X Position", y = "Y Position", color = "Candidate ID"
+#   ) +
+#   coord_equal() +
+#   theme_minimal() +
+#   theme(legend.position = "none")
 
 
 
