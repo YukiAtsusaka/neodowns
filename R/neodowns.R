@@ -36,7 +36,21 @@ neodowns <- function(data,
                      boost = 6,
                      seed = 14231) {
 
-  # Set up -----------------------------------------------------------------------
+# Only for debuggin
+  n_iter = 100
+  mu_c = 1 # average spatial voting
+  mu_b = 2 # average co-ethnic voting
+  sigma_c = 0.5
+  sigma_b = 0.5
+  eps_sd = 0.5
+  unit = 0.05
+  force = TRUE
+  while_max = 200
+  boost = 6
+  seed = 14231
+
+
+# Set up -----------------------------------------------------------------------
   set.seed(seed)
 
   d_voters <- data$gen_voters
@@ -51,10 +65,10 @@ neodowns <- function(data,
   m_vec <- rep(1:(J/2), 2) # used in J-loop
 
 
-  # Chain initialization ---------------------------------------------------------
+# Chain initialization ---------------------------------------------------------
 
   # Feeding the voter distribution to "initial chain" for both systems
-  init <- chain <- chain_rcv <- chain_rcv_t <- d_voters
+  init <- chain <- d_voters
 
   init <- init %>%
     mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
@@ -130,241 +144,19 @@ neodowns <- function(data,
 
   # Compute the first-choice probability score (sum of all support probabilities)
   P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
-  P1_score_rcv <- P2_score_rcv <- P3_score_rcv <- P4_score_rcv <- P5_score_rcv <- P6_score_rcv <- NA
-  P1_score_rcv_t <- P2_score_rcv_t <- P3_score_rcv_t <- P4_score_rcv_t <- P5_score_rcv_t <- P6_score_rcv_t <- NA
   P1_score[1] <- sum(init$P1)
   P2_score[1] <- sum(init$P2)
   P3_score[1] <- sum(init$P3)
   P4_score[1] <- sum(init$P4)
   P5_score[1] <- sum(init$P5)
   P6_score[1] <- sum(init$P6)
-  P1_score_rcv[1] <- sum(init$P1)
-  P2_score_rcv[1] <- sum(init$P2)
-  P3_score_rcv[1] <- sum(init$P3)
-  P4_score_rcv[1] <- sum(init$P4)
-  P5_score_rcv[1] <- sum(init$P5)
-  P6_score_rcv[1] <- sum(init$P6)
-  P1_score_rcv_t[1] <- sum(init$P1)
-  P2_score_rcv_t[1] <- sum(init$P2)
-  P3_score_rcv_t[1] <- sum(init$P3)
-  P4_score_rcv_t[1] <- sum(init$P4)
-  P5_score_rcv_t[1] <- sum(init$P5)
-  P6_score_rcv_t[1] <- sum(init$P6)
 
   # First-choice probabilities (for FPTP, RCV1, RCV2)
   P_vec <- NA
-  P_vec_rcv <- NA
-  P_vec_rcv_t <- NA
   P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
-  P_vec_rcv <- rbind(P1_score_rcv, P2_score_rcv, P3_score_rcv, P4_score_rcv, P5_score_rcv, P6_score_rcv)
-  P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
 
   # # CHECK: Sum of all first-choice probabilities: they need to sum up to N=1000
   # print(sum(P_vec)) # First-choice FPTP
-  # print(sum(P_vec_rcv)) # First-choice RCV (only up to second)
-  # print(sum(P_vec_rcv_t)) # First-choice RCV  (up to third)
-
-  # (1): RCV - Second Choice Probability
-  # Computing the second-choice probability that each voter votes for each party
-  V_den_ex1 <- exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6) # Second-choice prob without P1
-  V_den_ex2 <- exp(init$V1) + exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6) # Second-choice prob without P2
-  V_den_ex3 <- exp(init$V1) + exp(init$V2) + exp(init$V4) + exp(init$V5) + exp(init$V6) # Second-choice prob without P3
-  V_den_ex4 <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V5) + exp(init$V6) # Second-choice prob without P4
-  V_den_ex5 <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V6) # Second-choice prob without P5
-  V_den_ex6 <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) # Second-choice prob without P6
-
-  # Average second-choice probabilities (the probability of ranking (A,B,...))
-  init$P1_s <- (exp(init$V1) / V_den_ex2) * init$P2 + (exp(init$V1) / V_den_ex3) * init$P3 +
-    (exp(init$V1) / V_den_ex4) * init$P4 + (exp(init$V1) / V_den_ex5) * init$P5 + (exp(init$V1) / V_den_ex6) * init$P6
-  init$P2_s <- (exp(init$V2) / V_den_ex1) * init$P1 + (exp(init$V2) / V_den_ex3) * init$P3 +
-    (exp(init$V2) / V_den_ex4) * init$P4 + (exp(init$V2) / V_den_ex5) * init$P5 + (exp(init$V2) / V_den_ex6) * init$P6
-  init$P3_s <- (exp(init$V3) / V_den_ex1) * init$P1 + (exp(init$V3) / V_den_ex2) * init$P2 +
-    (exp(init$V3) / V_den_ex4) * init$P4 + (exp(init$V3) / V_den_ex5) * init$P5 + (exp(init$V3) / V_den_ex6) * init$P6
-  init$P4_s <- (exp(init$V4) / V_den_ex1) * init$P1 + (exp(init$V4) / V_den_ex2) * init$P2 +
-    (exp(init$V4) / V_den_ex3) * init$P3 + (exp(init$V4) / V_den_ex5) * init$P5 + (exp(init$V4) / V_den_ex6) * init$P6
-  init$P5_s <- (exp(init$V5) / V_den_ex1) * init$P1 + (exp(init$V5) / V_den_ex2) * init$P2 +
-    (exp(init$V5) / V_den_ex3) * init$P3 + (exp(init$V5) / V_den_ex4) * init$P4 + (exp(init$V5) / V_den_ex6) * init$P6
-  init$P6_s <- (exp(init$V6) / V_den_ex1) * init$P1 + (exp(init$V6) / V_den_ex2) * init$P2 +
-    (exp(init$V6) / V_den_ex3) * init$P3 + (exp(init$V6) / V_den_ex4) * init$P4 + (exp(init$V6) / V_den_ex5) * init$P5
-
-  # # CHECK: mean should be 1
-  # mean(init$P1_s > 0 & init$P1_s < 1)
-  # mean(init$P2_s > 0 & init$P2_s < 1)
-  # mean(init$P3_s > 0 & init$P3_s < 1)
-  # mean(init$P4_s > 0 & init$P4_s < 1)
-  # mean(init$P5_s > 0 & init$P5_s < 1)
-  # mean(init$P6_s > 0 & init$P6_s < 1)
-  #
-  # # Check that maximum probability of choosing candidate 1 1st and choosing candidate 1 second does not exceeed 1
-  # max(init$P1 + init$P1_s)
-  # max(init$P2 + init$P2_s)
-  # max(init$P3 + init$P3_s)
-  # max(init$P4 + init$P4_s)
-  # max(init$P5 + init$P5_s)
-  # max(init$P6 + init$P6_s)
-
-
-  # Compute the SECOND-choice probability score (sum of all support probabilities)
-  P1_s_score <- NA
-  P2_s_score <- NA
-  P3_s_score <- NA
-  P4_s_score <- NA
-  P5_s_score <- NA
-  P6_s_score <- NA
-  P1_st_score <- NA
-  P2_st_score <- NA
-  P3_st_score <- NA
-  P4_st_score <- NA
-  P5_st_score <- NA
-  P6_st_score <- NA
-
-  P1_s_score[1] <- sum(init$P1_s)
-  P2_s_score[1] <- sum(init$P2_s)
-  P3_s_score[1] <- sum(init$P3_s)
-  P4_s_score[1] <- sum(init$P4_s)
-  P5_s_score[1] <- sum(init$P5_s)
-  P6_s_score[1] <- sum(init$P6_s)
-  P1_st_score[1] <- sum(init$P1_s)
-  P2_st_score[1] <- sum(init$P2_s)
-  P3_st_score[1] <- sum(init$P3_s)
-  P4_st_score[1] <- sum(init$P4_s)
-  P5_st_score[1] <- sum(init$P5_s)
-  P6_st_score[1] <- sum(init$P6_s)
-
-  P_s_vec <- NA
-  P_st_vec <- NA
-  P_s_vec <- rbind(P1_s_score, P2_s_score, P3_s_score, P4_s_score, P5_s_score, P6_s_score)
-  P_st_vec <- rbind(P1_st_score, P2_st_score, P3_st_score, P4_st_score, P5_st_score, P6_st_score)
-
-  # # They must sum up to N=1000
-  # print(sum(P_s_vec)) # GOOD
-  # print(sum(P_st_vec)) # GOOD
-
-
-  # (3): RCV - Third Choice Probability
-  # Computing the third-choice probability that each voter votes for each party
-  V_den_ex12 <- exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6) # Third-choice prob without P1 & P2
-  V_den_ex13 <- exp(init$V2) + exp(init$V4) + exp(init$V5) + exp(init$V6) # Third-choice prob without P1 & P3
-  V_den_ex14 <- exp(init$V2) + exp(init$V3) + exp(init$V5) + exp(init$V6) # Third-choice prob without P1 & P4
-  V_den_ex15 <- exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V6) # Third-choice prob without P1 & P5
-  V_den_ex16 <- exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) # Third-choice prob without P1 & P6
-  V_den_ex23 <- exp(init$V1) + exp(init$V4) + exp(init$V5) + exp(init$V6) # Third-choice prob without P2 & P3
-  V_den_ex24 <- exp(init$V1) + exp(init$V3) + exp(init$V5) + exp(init$V6) # Third-choice prob without P2 & P4
-  V_den_ex25 <- exp(init$V1) + exp(init$V3) + exp(init$V4) + exp(init$V6) # Third-choice prob without P2 & P5
-  V_den_ex26 <- exp(init$V1) + exp(init$V3) + exp(init$V4) + exp(init$V5) # Third-choice prob without P2 & P6
-  V_den_ex34 <- exp(init$V1) + exp(init$V2) + exp(init$V5) + exp(init$V6) # Third-choice prob without P3 & P4
-  V_den_ex35 <- exp(init$V1) + exp(init$V2) + exp(init$V4) + exp(init$V6) # Third-choice prob without P3 & P5
-  V_den_ex36 <- exp(init$V1) + exp(init$V2) + exp(init$V4) + exp(init$V5) # Third-choice prob without P3 & P6
-  V_den_ex45 <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V6) # Third-choice prob without P4 & P5
-  V_den_ex46 <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V5) # Third-choice prob without P4 & P6
-  V_den_ex56 <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) # Third-choice prob without P5 & P6
-
-
-  # Weighted Average third-choice probabilities
-  # exp(party A)/(sum exp(remaining)) * [prob(second|first)prob(first) + prob(second|first)prob(first)]
-  init$P1_t <- (exp(init$V1) / V_den_ex23) * ((exp(init$V3) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex3) * init$P3) + # Prob of choosing 2 then 3 + Prob of choosing 3 then 2
-    (exp(init$V1) / V_den_ex24) * ((exp(init$V4) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex4) * init$P4) +
-    (exp(init$V1) / V_den_ex25) * ((exp(init$V5) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex5) * init$P5) +
-    (exp(init$V1) / V_den_ex26) * ((exp(init$V6) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex6) * init$P6) +
-    (exp(init$V1) / V_den_ex34) * ((exp(init$V4) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex4) * init$P4) +
-    (exp(init$V1) / V_den_ex35) * ((exp(init$V5) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex5) * init$P5) +
-    (exp(init$V1) / V_den_ex36) * ((exp(init$V6) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex6) * init$P6) +
-    (exp(init$V1) / V_den_ex45) * ((exp(init$V5) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex5) * init$P5) +
-    (exp(init$V1) / V_den_ex46) * ((exp(init$V6) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex6) * init$P6) +
-    (exp(init$V1) / V_den_ex56) * ((exp(init$V6) / V_den_ex5) * init$P5 + (exp(init$V5) / V_den_ex6) * init$P6)
-
-  init$P2_t <- (exp(init$V2) / V_den_ex13) * ((exp(init$V3) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex3) * init$P3) + #
-    (exp(init$V2) / V_den_ex14) * ((exp(init$V4) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex4) * init$P4) +
-    (exp(init$V2) / V_den_ex15) * ((exp(init$V5) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex5) * init$P5) +
-    (exp(init$V2) / V_den_ex16) * ((exp(init$V6) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex6) * init$P6) +
-    (exp(init$V2) / V_den_ex34) * ((exp(init$V4) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex4) * init$P4) +
-    (exp(init$V2) / V_den_ex35) * ((exp(init$V5) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex5) * init$P5) +
-    (exp(init$V2) / V_den_ex36) * ((exp(init$V6) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex6) * init$P6) +
-    (exp(init$V2) / V_den_ex45) * ((exp(init$V5) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex5) * init$P5) +
-    (exp(init$V2) / V_den_ex46) * ((exp(init$V6) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex6) * init$P6) +
-    (exp(init$V2) / V_den_ex56) * ((exp(init$V6) / V_den_ex5) * init$P5 + (exp(init$V5) / V_den_ex6) * init$P6)
-
-  init$P3_t <- (exp(init$V3) / V_den_ex12) * ((exp(init$V2) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex2) * init$P2) + #
-    (exp(init$V3) / V_den_ex14) * ((exp(init$V4) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex4) * init$P4) +
-    (exp(init$V3) / V_den_ex15) * ((exp(init$V5) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex5) * init$P5) +
-    (exp(init$V3) / V_den_ex16) * ((exp(init$V6) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex6) * init$P6) +
-    (exp(init$V3) / V_den_ex24) * ((exp(init$V4) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex4) * init$P4) +
-    (exp(init$V3) / V_den_ex25) * ((exp(init$V5) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex5) * init$P5) +
-    (exp(init$V3) / V_den_ex26) * ((exp(init$V6) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex6) * init$P6) +
-    (exp(init$V3) / V_den_ex45) * ((exp(init$V5) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex5) * init$P5) +
-    (exp(init$V3) / V_den_ex46) * ((exp(init$V6) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex6) * init$P6) +
-    (exp(init$V3) / V_den_ex56) * ((exp(init$V6) / V_den_ex5) * init$P5 + (exp(init$V5) / V_den_ex6) * init$P6)
-
-  init$P4_t <- (exp(init$V4) / V_den_ex12) * ((exp(init$V2) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex2) * init$P2) + #
-    (exp(init$V4) / V_den_ex13) * ((exp(init$V3) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex3) * init$P3) +
-    (exp(init$V4) / V_den_ex15) * ((exp(init$V5) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex5) * init$P5) +
-    (exp(init$V4) / V_den_ex16) * ((exp(init$V6) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex6) * init$P6) +
-    (exp(init$V4) / V_den_ex23) * ((exp(init$V3) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex3) * init$P3) +
-    (exp(init$V4) / V_den_ex25) * ((exp(init$V5) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex5) * init$P5) +
-    (exp(init$V4) / V_den_ex26) * ((exp(init$V6) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex6) * init$P6) +
-    (exp(init$V4) / V_den_ex35) * ((exp(init$V5) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex5) * init$P5) +
-    (exp(init$V4) / V_den_ex36) * ((exp(init$V6) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex6) * init$P6) +
-    (exp(init$V4) / V_den_ex56) * ((exp(init$V6) / V_den_ex5) * init$P5 + (exp(init$V5) / V_den_ex6) * init$P6)
-
-  init$P5_t <- (exp(init$V5) / V_den_ex12) * ((exp(init$V2) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex2) * init$P2) + #
-    (exp(init$V5) / V_den_ex13) * ((exp(init$V3) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex3) * init$P3) +
-    (exp(init$V5) / V_den_ex14) * ((exp(init$V4) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex4) * init$P4) +
-    (exp(init$V5) / V_den_ex16) * ((exp(init$V6) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex6) * init$P6) +
-    (exp(init$V5) / V_den_ex23) * ((exp(init$V3) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex3) * init$P3) +
-    (exp(init$V5) / V_den_ex24) * ((exp(init$V4) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex4) * init$P4) +
-    (exp(init$V5) / V_den_ex26) * ((exp(init$V6) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex6) * init$P6) +
-    (exp(init$V5) / V_den_ex34) * ((exp(init$V4) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex4) * init$P4) +
-    (exp(init$V5) / V_den_ex36) * ((exp(init$V6) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex6) * init$P6) +
-    (exp(init$V5) / V_den_ex46) * ((exp(init$V6) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex6) * init$P6)
-
-  init$P6_t <- (exp(init$V6) / V_den_ex12) * ((exp(init$V2) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex2) * init$P2) +
-    (exp(init$V6) / V_den_ex13) * ((exp(init$V3) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex3) * init$P3) +
-    (exp(init$V6) / V_den_ex14) * ((exp(init$V4) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex4) * init$P4) +
-    (exp(init$V6) / V_den_ex15) * ((exp(init$V5) / V_den_ex1) * init$P1 + (exp(init$V1) / V_den_ex5) * init$P5) +
-    (exp(init$V6) / V_den_ex23) * ((exp(init$V3) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex3) * init$P3) +
-    (exp(init$V6) / V_den_ex24) * ((exp(init$V4) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex4) * init$P4) +
-    (exp(init$V6) / V_den_ex25) * ((exp(init$V5) / V_den_ex2) * init$P2 + (exp(init$V2) / V_den_ex5) * init$P5) +
-    (exp(init$V6) / V_den_ex34) * ((exp(init$V4) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex4) * init$P4) +
-    (exp(init$V6) / V_den_ex35) * ((exp(init$V5) / V_den_ex3) * init$P3 + (exp(init$V3) / V_den_ex5) * init$P5) +
-    (exp(init$V6) / V_den_ex45) * ((exp(init$V5) / V_den_ex4) * init$P4 + (exp(init$V4) / V_den_ex5) * init$P5)
-
-  # # CHECK: mean should be 1
-  # mean(init$P1_t > 0 & init$P1_t < 1)
-  # mean(init$P2_t > 0 & init$P2_t < 1)
-  # mean(init$P3_t > 0 & init$P3_t < 1)
-  # mean(init$P4_t > 0 & init$P4_t < 1)
-  # mean(init$P5_t > 0 & init$P5_t < 1)
-  # mean(init$P6_t > 0 & init$P6_t < 1)
-  #
-  # # Check that maximum probability of choosing candidate 1 1st and choosing candidate 1 second
-  # # and choosing candidate 1 third does not exceed 1
-  #
-  # max(init$P1 + init$P1_s + init$P1_t)
-  # max(init$P2 + init$P2_s + init$P2_t)
-  # max(init$P3 + init$P3_s + init$P3_t)
-  # max(init$P4 + init$P4_s + init$P4_t)
-  # max(init$P5 + init$P5_s + init$P5_t)
-  # max(init$P6 + init$P6_s + init$P6_t)
-
-  # Compute the THIRD-choice probability score (sum of all support probabilities)
-  P1_tt_score <- NA
-  P2_tt_score <- NA
-  P3_tt_score <- NA
-  P4_tt_score <- NA
-  P5_tt_score <- NA
-  P6_tt_score <- NA
-  P1_tt_score[1] <- sum(init$P1_t)
-  P2_tt_score[1] <- sum(init$P2_t)
-  P3_tt_score[1] <- sum(init$P3_t)
-  P4_tt_score[1] <- sum(init$P4_t)
-  P5_tt_score[1] <- sum(init$P5_t)
-  P6_tt_score[1] <- sum(init$P6_t)
-
-  P_tt_vec <- NA
-  P_tt_vec <- rbind(P1_tt_score, P2_tt_score, P3_tt_score, P4_tt_score, P5_tt_score, P6_tt_score)
-
-  # # CHECK
-  # print(sum(P_tt_vec)) # GOOD! It needs to be N=1000
 
   # ========================================================================#
   # Updating party positions (initial move_max1)
@@ -376,19 +168,12 @@ neodowns <- function(data,
   move_max1$dist <- sqrt((move_max1$x - 0)^2 + (move_max1$y - 0)^2)
   move_max1$moderation <- move_max1$dist / d_cands$dist
 
-  move_max2 <- move_max1 # Using the same initial conditions
-  move_max3 <- move_max1 # Using the same initial conditions
-  theta_rcv <- theta # Using the same initial directions
-  theta_rcv_t <- theta # Using the same initial directions
   # ========================================================================#
 
   iter <- NA
-  cands_max1 <- cands_max2 <- cands_max3 <- list()
-  voter_max1 <- voter_max2 <- voter_max3 <- list()
+  cands_max1 <- list()
+  voter_max1 <- list()
   new_theta <- NA
-  new_theta_rcv <- NA
-  new_theta_rcv_t <- NA
-
 
   pb <- progress_bar$new(
     format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
@@ -515,415 +300,26 @@ neodowns <- function(data,
     try(if (sum(P_vec[, 1]) != N_voters) stop("FPTP: 1st-choice probabilities do not sum up to one"))
 
 
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # (2): RCV -- Second Choice
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Compute the voting probabilities again
-
-    # Computing the Euclidean distance between parties and voters
-    chain_rcv$D1 <- sqrt((chain_rcv$x - move_max2$x[1])^2 + (chain_rcv$y - move_max2$y[1])^2)
-    chain_rcv$D2 <- sqrt((chain_rcv$x - move_max2$x[2])^2 + (chain_rcv$y - move_max2$y[2])^2)
-    chain_rcv$D3 <- sqrt((chain_rcv$x - move_max2$x[3])^2 + (chain_rcv$y - move_max2$y[3])^2)
-    chain_rcv$D4 <- sqrt((chain_rcv$x - move_max2$x[4])^2 + (chain_rcv$y - move_max2$y[4])^2)
-    chain_rcv$D5 <- sqrt((chain_rcv$x - move_max2$x[5])^2 + (chain_rcv$y - move_max2$y[5])^2)
-    chain_rcv$D6 <- sqrt((chain_rcv$x - move_max2$x[6])^2 + (chain_rcv$y - move_max2$y[6])^2)
-
-    # Computing the observed utility for each party (This is where we specify utility functions)
-    chain_rcv$V1 <- -1 * c * chain_rcv$D1 - b * m1 + eps1
-    chain_rcv$V2 <- -1 * c * chain_rcv$D2 - b * m2 + eps2
-    chain_rcv$V3 <- -1 * c * chain_rcv$D3 - b * m3 + eps3
-    chain_rcv$V4 <- -1 * c * chain_rcv$D4 - b * m4 + eps4
-    chain_rcv$V5 <- -1 * c * chain_rcv$D5 - b * m5 + eps5
-    chain_rcv$V6 <- -1 * c * chain_rcv$D6 - b * m6 + eps6
-
-    # Computing the probability that each voter votes for each party (this is fixed)
-    den <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6)
-
-    chain_rcv$P1 <- exp(chain_rcv$V1) / den
-    chain_rcv$P2 <- exp(chain_rcv$V2) / den
-    chain_rcv$P3 <- exp(chain_rcv$V3) / den
-    chain_rcv$P4 <- exp(chain_rcv$V4) / den
-    chain_rcv$P5 <- exp(chain_rcv$V5) / den
-    chain_rcv$P6 <- exp(chain_rcv$V6) / den
-
-
-    V_den_ex1 <- exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6) # Second-choice prob without P1
-    V_den_ex2 <- exp(chain_rcv$V1) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6) # Second-choice prob without P2
-    V_den_ex3 <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V4) + exp(chain_rcv$V5) + exp(chain_rcv$V6) # Second-choice prob without P3
-    V_den_ex4 <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V5) + exp(chain_rcv$V6) # Second-choice prob without P4
-    V_den_ex5 <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V6) # Second-choice prob without P5
-    V_den_ex6 <- exp(chain_rcv$V1) + exp(chain_rcv$V2) + exp(chain_rcv$V3) + exp(chain_rcv$V4) + exp(chain_rcv$V5) # Second-choice prob without P6
-
-    # Average second-choice probabilities (the probability of ranking (A,B,...))
-    chain_rcv$P1_s <- (exp(chain_rcv$V1) / V_den_ex2) * chain_rcv$P2 + (exp(chain_rcv$V1) / V_den_ex3) * chain_rcv$P3 +
-      (exp(chain_rcv$V1) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V1) / V_den_ex5) * chain_rcv$P5 + (exp(chain_rcv$V1) / V_den_ex6) * chain_rcv$P6
-    chain_rcv$P2_s <- (exp(chain_rcv$V2) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V2) / V_den_ex3) * chain_rcv$P3 +
-      (exp(chain_rcv$V2) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V2) / V_den_ex5) * chain_rcv$P5 + (exp(chain_rcv$V2) / V_den_ex6) * chain_rcv$P6
-    chain_rcv$P3_s <- (exp(chain_rcv$V3) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V3) / V_den_ex2) * chain_rcv$P2 +
-      (exp(chain_rcv$V3) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V3) / V_den_ex5) * chain_rcv$P5 + (exp(chain_rcv$V3) / V_den_ex6) * chain_rcv$P6
-    chain_rcv$P4_s <- (exp(chain_rcv$V4) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V4) / V_den_ex2) * chain_rcv$P2 +
-      (exp(chain_rcv$V4) / V_den_ex3) * chain_rcv$P3 + (exp(chain_rcv$V4) / V_den_ex5) * chain_rcv$P5 + (exp(chain_rcv$V4) / V_den_ex6) * chain_rcv$P6
-    chain_rcv$P5_s <- (exp(chain_rcv$V5) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V5) / V_den_ex2) * chain_rcv$P2 +
-      (exp(chain_rcv$V5) / V_den_ex3) * chain_rcv$P3 + (exp(chain_rcv$V5) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V5) / V_den_ex6) * chain_rcv$P6
-    chain_rcv$P6_s <- (exp(chain_rcv$V6) / V_den_ex1) * chain_rcv$P1 + (exp(chain_rcv$V6) / V_den_ex2) * chain_rcv$P2 +
-      (exp(chain_rcv$V6) / V_den_ex3) * chain_rcv$P3 + (exp(chain_rcv$V6) / V_den_ex4) * chain_rcv$P4 + (exp(chain_rcv$V6) / V_den_ex5) * chain_rcv$P5
-
-
-    # Compute the probability score (sum of all support probabilities)
-    P1_score_rcv[t] <- sum(chain_rcv$P1)
-    P2_score_rcv[t] <- sum(chain_rcv$P2)
-    P3_score_rcv[t] <- sum(chain_rcv$P3)
-    P4_score_rcv[t] <- sum(chain_rcv$P4)
-    P5_score_rcv[t] <- sum(chain_rcv$P5)
-    P6_score_rcv[t] <- sum(chain_rcv$P6)
-
-    # Compute the second-choice probability score (sum of all support probabilities)
-    P1_s_score[t] <- sum(chain_rcv$P1_s)
-    P2_s_score[t] <- sum(chain_rcv$P2_s)
-    P3_s_score[t] <- sum(chain_rcv$P3_s)
-    P4_s_score[t] <- sum(chain_rcv$P4_s)
-    P5_s_score[t] <- sum(chain_rcv$P5_s)
-    P6_s_score[t] <- sum(chain_rcv$P6_s)
-
-    P_vec_rcv <- rbind(P1_score_rcv, P2_score_rcv, P3_score_rcv, P4_score_rcv, P5_score_rcv, P6_score_rcv)
-    P_s_vec <- rbind(P1_s_score, P2_s_score, P3_s_score, P4_s_score, P5_s_score, P6_s_score)
-
-    # CHECK
-    try(if (sum(P_vec_rcv[, 1]) != N_voters) stop("RCV1: 1st-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_s_vec[, 1]) != N_voters) stop("RCV1: 2nd-choice ranking probabilities do not sum up to one"))
-
-
-    # ============================================================================#
-    #  Updating party locations
-    # ============================================================================#
-
-    new_theta_rcv <- NA # Initialize
-    move_max2$new_dist <- NA # Initialize
-    for (i in 1:6) {
-      # For moderate parties
-      if (i < 4) {
-        new_theta_rcv[i] <- ifelse(P_vec_rcv[i, t] >= P_vec_rcv[i, t - 1] &
-                                     P_s_vec[i, t] >= P_s_vec[i, t - 1], # If new position has higher 1st and 2nd choice probs
-                                   theta_rcv[i], # Keep going
-                                   runif(n = 1, min = theta_rcv[i] + 90, max = theta_rcv[i] + 270)
-        ) # New position on the other side
-
-        move_max2$x[i] <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit # Compute x-value given theta
-        move_max2$y[i] <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit # Compute y-value given theta
-        move_max2$new_dist[i] <- sqrt((move_max2$x[i] - 0)^2 + (move_max2$y[i] - 0)^2) # New Distance
-        move_max2$moderation[i] <- move_max2$new_dist[i] / move_max2$dist[i] # New Location / Initial Location
-        theta_rcv[i] <- new_theta_rcv[i] # Update for the next iteration
-
-        # For extreme parties
-      } else {
-        new_theta_rcv[i] <- ifelse(P_vec_rcv[i, t] >= P_vec_rcv[i, t - 1] &
-                                     P_s_vec[i, t] >= P_s_vec[i, t - 1], # Extreme parties stay "extreme"
-                                   theta_rcv[i], # Keep going
-                                   runif(n = 1, min = theta_rcv[i] + 90, max = theta_rcv[i] + 270)
-        ) # New position on the other side
-
-        # Updating party locations
-        propose_x <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit # Compute x-value given theta
-        propose_y <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit # Compute y-value given theta
-        move_max2$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
-
-        if (force == TRUE) {
-          while_iter <- 1
-          # Change the direction until extreme parties become more extreme than moderate parties
-          while (move_max2$new_dist[i] < move_max2$new_dist[i - 3] & while_iter <= while_max) {
-            new_theta_rcv[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
-            propose_x <- move_max2$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute x-value given theta
-            propose_y <- move_max2$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Compute y-value given theta
-            move_max2$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
-
-            while_iter <- while_iter + 1
-          } # Close while () loop
-          # if (while_iter >= while_max) {
-          #   print(paste0("While Iteration (RCV - 2nd): ", while_iter, " for party ", i, " at iteration = ", t))
-          # }
-
-          # If extreme parties cannot find a way out, STAY (NO move_max1)
-          if (while_iter == while_max) {
-            propose_x <- move_max1$x[i]
-            propose_y <- move_max1$y[i]
-          }
-        } # Closing the Assumption 1 condition
-
-
-        move_max2$x[i] <- propose_x # Saving the accepted location
-        move_max2$y[i] <- propose_y # Saving the accepted location
-
-        move_max2$moderation[i] <- move_max2$new_dist[i] / move_max2$dist[i] # New Location / Initial Location
-        theta_rcv[i] <- new_theta_rcv[i] # Update for the next iteration
-      } # Close else{}
-    } # Close for () loop
-
-
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # (3): RCV -- Third Choice
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
-    # Compute the voting probabilities again
-
-    # Computing the Euclidean distance between parties and voters
-    chain_rcv_t$D1 <- sqrt((chain_rcv_t$x - move_max3$x[1])^2 + (chain_rcv_t$y - move_max3$y[1])^2)
-    chain_rcv_t$D2 <- sqrt((chain_rcv_t$x - move_max3$x[2])^2 + (chain_rcv_t$y - move_max3$y[2])^2)
-    chain_rcv_t$D3 <- sqrt((chain_rcv_t$x - move_max3$x[3])^2 + (chain_rcv_t$y - move_max3$y[3])^2)
-    chain_rcv_t$D4 <- sqrt((chain_rcv_t$x - move_max3$x[4])^2 + (chain_rcv_t$y - move_max3$y[4])^2)
-    chain_rcv_t$D5 <- sqrt((chain_rcv_t$x - move_max3$x[5])^2 + (chain_rcv_t$y - move_max3$y[5])^2)
-    chain_rcv_t$D6 <- sqrt((chain_rcv_t$x - move_max3$x[6])^2 + (chain_rcv_t$y - move_max3$y[6])^2)
-
-    # Computing the observed utility for each party (This is where we specify utility functions)
-    chain_rcv_t$V1 <- -1 * c * chain_rcv_t$D1 - b * m1 + eps1
-    chain_rcv_t$V2 <- -1 * c * chain_rcv_t$D2 - b * m2 + eps2
-    chain_rcv_t$V3 <- -1 * c * chain_rcv_t$D3 - b * m3 + eps3
-    chain_rcv_t$V4 <- -1 * c * chain_rcv_t$D4 - b * m4 + eps4
-    chain_rcv_t$V5 <- -1 * c * chain_rcv_t$D5 - b * m5 + eps5
-    chain_rcv_t$V6 <- -1 * c * chain_rcv_t$D6 - b * m6 + eps6
-
-    # Computing the probability that each voter votes for each party (this is fixed)
-    den <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6)
-
-    chain_rcv_t$P1 <- exp(chain_rcv_t$V1) / den
-    chain_rcv_t$P2 <- exp(chain_rcv_t$V2) / den
-    chain_rcv_t$P3 <- exp(chain_rcv_t$V3) / den
-    chain_rcv_t$P4 <- exp(chain_rcv_t$V4) / den
-    chain_rcv_t$P5 <- exp(chain_rcv_t$V5) / den
-    chain_rcv_t$P6 <- exp(chain_rcv_t$V6) / den
-
-    V_den_ex1 <- exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P1
-    V_den_ex2 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P2
-    V_den_ex3 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P3
-    V_den_ex4 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Second-choice prob without P4
-    V_den_ex5 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V6) # Second-choice prob without P5
-    V_den_ex6 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) # Second-choice prob without P6
-
-    # Average second-choice probabilities (the probability of ranking (A,B,...))
-    chain_rcv_t$P1_s <- (exp(chain_rcv_t$V1) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V1) / V_den_ex3) * chain_rcv_t$P3 +
-      (exp(chain_rcv_t$V1) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V1) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V1) / V_den_ex6) * chain_rcv_t$P6
-    chain_rcv_t$P2_s <- (exp(chain_rcv_t$V2) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V2) / V_den_ex3) * chain_rcv_t$P3 +
-      (exp(chain_rcv_t$V2) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V2) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V2) / V_den_ex6) * chain_rcv_t$P6
-    chain_rcv_t$P3_s <- (exp(chain_rcv_t$V3) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V3) / V_den_ex2) * chain_rcv_t$P2 +
-      (exp(chain_rcv_t$V3) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V3) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V3) / V_den_ex6) * chain_rcv_t$P6
-    chain_rcv_t$P4_s <- (exp(chain_rcv_t$V4) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V4) / V_den_ex2) * chain_rcv_t$P2 +
-      (exp(chain_rcv_t$V4) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V4) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V4) / V_den_ex6) * chain_rcv_t$P6
-    chain_rcv_t$P5_s <- (exp(chain_rcv_t$V5) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V5) / V_den_ex2) * chain_rcv_t$P2 +
-      (exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V5) / V_den_ex6) * chain_rcv_t$P6
-    chain_rcv_t$P6_s <- (exp(chain_rcv_t$V6) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V6) / V_den_ex2) * chain_rcv_t$P2 +
-      (exp(chain_rcv_t$V6) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V6) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V6) / V_den_ex5) * chain_rcv_t$P5
-
-
-    # Computing the third-choice probability that each voter votes for each party
-    V_den_ex12 <- exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Third-choice prob without P1 & P2
-    V_den_ex13 <- exp(chain_rcv_t$V2) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Third-choice prob without P1 & P3
-    V_den_ex14 <- exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Third-choice prob without P1 & P4
-    V_den_ex15 <- exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V6) # Third-choice prob without P1 & P5
-    V_den_ex16 <- exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) # Third-choice prob without P1 & P6
-    V_den_ex23 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Third-choice prob without P2 & P3
-    V_den_ex24 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Third-choice prob without P2 & P4
-    V_den_ex25 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V6) # Third-choice prob without P2 & P5
-    V_den_ex26 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) # Third-choice prob without P2 & P6
-    V_den_ex34 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V5) + exp(chain_rcv_t$V6) # Third-choice prob without P3 & P4
-    V_den_ex35 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V6) # Third-choice prob without P3 & P5
-    V_den_ex36 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V4) + exp(chain_rcv_t$V5) # Third-choice prob without P3 & P6
-    V_den_ex45 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V6) # Third-choice prob without P4 & P5
-    V_den_ex46 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V5) # Third-choice prob without P4 & P6
-    V_den_ex56 <- exp(chain_rcv_t$V1) + exp(chain_rcv_t$V2) + exp(chain_rcv_t$V3) + exp(chain_rcv_t$V4) # Third-choice prob without P5 & P6
-
-    # Weighted Average third-choice probabilities
-    # exp(party A)/(sum exp(remaining)) * [prob(second|first)prob(first) + prob(second|first)prob(first)]
-    chain_rcv_t$P1_t <- (exp(chain_rcv_t$V1) / V_den_ex23) * ((exp(chain_rcv_t$V3) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex3) * chain_rcv_t$P3) + # Prob of choosing 2 then 3 + Prob of choosing 3 then 2
-      (exp(chain_rcv_t$V1) / V_den_ex24) * ((exp(chain_rcv_t$V4) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V1) / V_den_ex25) * ((exp(chain_rcv_t$V5) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V1) / V_den_ex26) * ((exp(chain_rcv_t$V6) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V1) / V_den_ex34) * ((exp(chain_rcv_t$V4) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V1) / V_den_ex35) * ((exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V1) / V_den_ex36) * ((exp(chain_rcv_t$V6) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V1) / V_den_ex45) * ((exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V1) / V_den_ex46) * ((exp(chain_rcv_t$V6) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V1) / V_den_ex56) * ((exp(chain_rcv_t$V6) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V5) / V_den_ex6) * chain_rcv_t$P6)
-
-    chain_rcv_t$P2_t <- (exp(chain_rcv_t$V2) / V_den_ex13) * ((exp(chain_rcv_t$V3) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex3) * chain_rcv_t$P3) + #
-      (exp(chain_rcv_t$V2) / V_den_ex14) * ((exp(chain_rcv_t$V4) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V2) / V_den_ex15) * ((exp(chain_rcv_t$V5) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V2) / V_den_ex16) * ((exp(chain_rcv_t$V6) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V2) / V_den_ex34) * ((exp(chain_rcv_t$V4) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V2) / V_den_ex35) * ((exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V2) / V_den_ex36) * ((exp(chain_rcv_t$V6) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V2) / V_den_ex45) * ((exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V2) / V_den_ex46) * ((exp(chain_rcv_t$V6) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V2) / V_den_ex56) * ((exp(chain_rcv_t$V6) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V5) / V_den_ex6) * chain_rcv_t$P6)
-
-    chain_rcv_t$P3_t <- (exp(chain_rcv_t$V3) / V_den_ex12) * ((exp(chain_rcv_t$V2) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex2) * chain_rcv_t$P2) + #
-      (exp(chain_rcv_t$V3) / V_den_ex14) * ((exp(chain_rcv_t$V4) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V3) / V_den_ex15) * ((exp(chain_rcv_t$V5) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V3) / V_den_ex16) * ((exp(chain_rcv_t$V6) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V3) / V_den_ex24) * ((exp(chain_rcv_t$V4) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V3) / V_den_ex25) * ((exp(chain_rcv_t$V5) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V3) / V_den_ex26) * ((exp(chain_rcv_t$V6) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V3) / V_den_ex45) * ((exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V3) / V_den_ex46) * ((exp(chain_rcv_t$V6) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V3) / V_den_ex56) * ((exp(chain_rcv_t$V6) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V5) / V_den_ex6) * chain_rcv_t$P6)
-
-    chain_rcv_t$P4_t <- (exp(chain_rcv_t$V4) / V_den_ex12) * ((exp(chain_rcv_t$V2) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex2) * chain_rcv_t$P2) + #
-      (exp(chain_rcv_t$V4) / V_den_ex13) * ((exp(chain_rcv_t$V3) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex3) * chain_rcv_t$P3) +
-      (exp(chain_rcv_t$V4) / V_den_ex15) * ((exp(chain_rcv_t$V5) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V4) / V_den_ex16) * ((exp(chain_rcv_t$V6) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V4) / V_den_ex23) * ((exp(chain_rcv_t$V3) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex3) * chain_rcv_t$P3) +
-      (exp(chain_rcv_t$V4) / V_den_ex25) * ((exp(chain_rcv_t$V5) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V4) / V_den_ex26) * ((exp(chain_rcv_t$V6) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V4) / V_den_ex35) * ((exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V4) / V_den_ex36) * ((exp(chain_rcv_t$V6) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V4) / V_den_ex56) * ((exp(chain_rcv_t$V6) / V_den_ex5) * chain_rcv_t$P5 + (exp(chain_rcv_t$V5) / V_den_ex6) * chain_rcv_t$P6)
-
-    chain_rcv_t$P5_t <- (exp(chain_rcv_t$V5) / V_den_ex12) * ((exp(chain_rcv_t$V2) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex2) * chain_rcv_t$P2) + #
-      (exp(chain_rcv_t$V5) / V_den_ex13) * ((exp(chain_rcv_t$V3) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex3) * chain_rcv_t$P3) +
-      (exp(chain_rcv_t$V5) / V_den_ex14) * ((exp(chain_rcv_t$V4) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V5) / V_den_ex16) * ((exp(chain_rcv_t$V6) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V5) / V_den_ex23) * ((exp(chain_rcv_t$V3) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex3) * chain_rcv_t$P3) +
-      (exp(chain_rcv_t$V5) / V_den_ex24) * ((exp(chain_rcv_t$V4) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V5) / V_den_ex26) * ((exp(chain_rcv_t$V6) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V5) / V_den_ex34) * ((exp(chain_rcv_t$V4) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V5) / V_den_ex36) * ((exp(chain_rcv_t$V6) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex6) * chain_rcv_t$P6) +
-      (exp(chain_rcv_t$V5) / V_den_ex46) * ((exp(chain_rcv_t$V6) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex6) * chain_rcv_t$P6)
-
-    chain_rcv_t$P6_t <- (exp(chain_rcv_t$V6) / V_den_ex12) * ((exp(chain_rcv_t$V2) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex2) * chain_rcv_t$P2) +
-      (exp(chain_rcv_t$V6) / V_den_ex13) * ((exp(chain_rcv_t$V3) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex3) * chain_rcv_t$P3) +
-      (exp(chain_rcv_t$V6) / V_den_ex14) * ((exp(chain_rcv_t$V4) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V6) / V_den_ex15) * ((exp(chain_rcv_t$V5) / V_den_ex1) * chain_rcv_t$P1 + (exp(chain_rcv_t$V1) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V6) / V_den_ex23) * ((exp(chain_rcv_t$V3) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex3) * chain_rcv_t$P3) +
-      (exp(chain_rcv_t$V6) / V_den_ex24) * ((exp(chain_rcv_t$V4) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V6) / V_den_ex25) * ((exp(chain_rcv_t$V5) / V_den_ex2) * chain_rcv_t$P2 + (exp(chain_rcv_t$V2) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V6) / V_den_ex34) * ((exp(chain_rcv_t$V4) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex4) * chain_rcv_t$P4) +
-      (exp(chain_rcv_t$V6) / V_den_ex35) * ((exp(chain_rcv_t$V5) / V_den_ex3) * chain_rcv_t$P3 + (exp(chain_rcv_t$V3) / V_den_ex5) * chain_rcv_t$P5) +
-      (exp(chain_rcv_t$V6) / V_den_ex45) * ((exp(chain_rcv_t$V5) / V_den_ex4) * chain_rcv_t$P4 + (exp(chain_rcv_t$V4) / V_den_ex5) * chain_rcv_t$P5)
-
-
-    # Compute the probability score (sum of all support probabilities)
-    P1_score_rcv_t[t] <- sum(chain_rcv_t$P1)
-    P2_score_rcv_t[t] <- sum(chain_rcv_t$P2)
-    P3_score_rcv_t[t] <- sum(chain_rcv_t$P3)
-    P4_score_rcv_t[t] <- sum(chain_rcv_t$P4)
-    P5_score_rcv_t[t] <- sum(chain_rcv_t$P5)
-    P6_score_rcv_t[t] <- sum(chain_rcv_t$P6)
-
-    # Compute the second-choice probability score (sum of all support probabilities)
-    P1_st_score[t] <- sum(chain_rcv_t$P1_s)
-    P2_st_score[t] <- sum(chain_rcv_t$P2_s)
-    P3_st_score[t] <- sum(chain_rcv_t$P3_s)
-    P4_st_score[t] <- sum(chain_rcv_t$P4_s)
-    P5_st_score[t] <- sum(chain_rcv_t$P5_s)
-    P6_st_score[t] <- sum(chain_rcv_t$P6_s)
-
-    # Compute the third-choice probability score (sum of all support probabilities)
-    P1_tt_score[t] <- sum(chain_rcv_t$P1_t)
-    P2_tt_score[t] <- sum(chain_rcv_t$P2_t)
-    P3_tt_score[t] <- sum(chain_rcv_t$P3_t)
-    P4_tt_score[t] <- sum(chain_rcv_t$P4_t)
-    P6_tt_score[t] <- sum(chain_rcv_t$P6_t)
-    P5_tt_score[t] <- sum(chain_rcv_t$P5_t)
-
-    P_vec_rcv_t <- rbind(P1_score_rcv_t, P2_score_rcv_t, P3_score_rcv_t, P4_score_rcv_t, P5_score_rcv_t, P6_score_rcv_t)
-    P_st_vec <- rbind(P1_st_score, P2_st_score, P3_st_score, P4_st_score, P5_st_score, P6_st_score)
-    P_tt_vec <- rbind(P1_tt_score, P2_tt_score, P3_tt_score, P4_tt_score, P5_tt_score, P6_tt_score)
-
-    # CHECK
-    try(if (sum(P_vec_rcv_t[, 1]) != N_voters) stop("RCV3: 1st-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_st_vec[, 1]) != N_voters) stop("RCV3: 2nd-choice ranking probabilities do not sum up to one"))
-    try(if (sum(P_tt_vec[, 1]) != N_voters) stop("RCV3: 3rd-choice ranking probabilities do not sum up to one"))
-
-    # ============================================================================#
-    #  Updating party locations
-    # ============================================================================#
-
-    new_theta_rcv_t <- NA # Initialize
-    move_max3$new_dist <- NA # Initialize
-    for (i in 1:6) {
-      # For moderate parties
-      if (i < 4) {
-        new_theta_rcv_t[i] <- ifelse(P_vec_rcv_t[i, t] >= P_vec_rcv_t[i, t - 1] &
-                                       P_st_vec[i, t] >= P_st_vec[i, t - 1] &
-                                       P_tt_vec[i, t] >= P_tt_vec[i, t - 1], # If new position has higher 1st and 2nd choice probs
-                                     theta_rcv_t[i], # Keep going
-                                     runif(n = 1, min = theta_rcv_t[i] + 90, max = theta_rcv_t[i] + 270)
-        ) # New position on the other side
-
-        move_max3$x[i] <- move_max3$x[i] + cos(new_theta_rcv_t[i] / 180 * pi) * unit # Compute x-value given theta
-        move_max3$y[i] <- move_max3$y[i] + sin(new_theta_rcv_t[i] / 180 * pi) * unit # Compute y-value given theta
-        move_max3$new_dist[i] <- sqrt((move_max3$x[i] - 0)^2 + (move_max3$y[i] - 0)^2) # New Distance
-        move_max3$moderation[i] <- move_max3$new_dist[i] / move_max3$dist[i] # New Location / Initial Location
-        theta_rcv_t[i] <- new_theta_rcv_t[i] # Update for the next iteration
-
-        # For extreme parties
-      } else {
-        new_theta_rcv_t[i] <- ifelse(P_vec_rcv_t[i, t] >= P_vec_rcv_t[i, t - 1] &
-                                       P_st_vec[i, t] >= P_st_vec[i, t - 1] &
-                                       P_tt_vec[i, t] >= P_tt_vec[i, t - 1], # Extreme parties stay "extreme"
-                                     theta_rcv_t[i], # Keep going
-                                     runif(n = 1, min = theta_rcv_t[i] + 90, max = theta_rcv_t[i] + 270)
-        ) # New position on the other side
-
-        # Updating party locations
-        propose_x <- move_max3$x[i] + cos(new_theta_rcv_t[i] / 180 * pi) * unit # Compute x-value given theta
-        propose_y <- move_max3$y[i] + sin(new_theta_rcv_t[i] / 180 * pi) * unit # Compute y-value given theta
-        move_max3$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
-
-        if (force == TRUE) {
-          while_iter <- 1
-          # Change the direction until extreme parties become more extreme than moderate parties
-          while (move_max3$new_dist[i] < move_max3$new_dist[i - 3] & while_iter <= while_max) {
-            new_theta_rcv_t[i] <- runif(n = 1, min = 0, max = 360) # Anywhere is okay as long as extreme parties can get out of the trap
-            propose_x <- move_max3$x[i] + cos(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
-            propose_y <- move_max3$y[i] + sin(new_theta_rcv[i] / 180 * pi) * unit * boost # Extra Bump (unit x 5) (8/3/2022)
-            move_max3$new_dist[i] <- sqrt((propose_x - 0)^2 + (propose_y - 0)^2) # New Distance
-
-            while_iter <- while_iter + 1
-          } # Close while () loop
-          # if (while_iter >= while_max) {
-          #   print(paste0("While Iteration (RCV -3rd): ", while_iter, " for party ", i, " at iteration = ", t))
-          # }
-
-          # If extreme parties cannot find a way out, STAY
-          if (while_iter == while_max) {
-            propose_x <- move_max1$x[i]
-            propose_y <- move_max1$y[i]
-          }
-        } # Closing the Assumption 1 condition
-
-        move_max3$x[i] <- propose_x # Saving the accepted location
-        move_max3$y[i] <- propose_y # Saving the accepted location
-
-        move_max3$moderation[i] <- move_max3$new_dist[i] / move_max3$dist[i] # New Location / Initial Location
-        theta_rcv_t[i] <- new_theta_rcv_t[i] # Update for the next iteration
-      } # Close else{}
-    } # Close for () loop
-
 
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
     # Keep cands_max1 of Party Positions
     # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX #
 
     move_max1$iter <- t
-    move_max2$iter <- t
-    move_max3$iter <- t
 
     # Save candidate information
     cands_max1[[t]] <- move_max1
-    cands_max2[[t]] <- move_max2
-    cands_max3[[t]] <- move_max3
+
 
     # Save voter information
     chain$iter <- t
-    chain_rcv$iter <- t
-    chain_rcv_t$iter <- t
     voter_max1[[t]] <- chain
-    voter_max2[[t]] <- chain_rcv
-    voter_max3[[t]] <- chain_rcv_t
 
     iter[t] <- t
 
   }
 
-  # END OF t loop
+
 
 
   # Summarizing results ----------------------------------------------------------
@@ -933,42 +329,19 @@ neodowns <- function(data,
            new_dist = dist,
            iter = 1)
 
-  cands_max2[[1]] <- d_cands %>%
-    mutate(moderation = 1,
-           new_dist = dist,
-           iter = 1)
-
-  cands_max3[[1]] <- d_cands %>%
-    mutate(moderation = 1,
-           new_dist = dist,
-           iter = 1)
-
-  # voter_max1[[1]] <- init %>%
-  #   mutate(moderation = 1,
-  #          new_dist = dist,
-  #          iter = 1)
-
   cands_max1 <- as.data.frame(do.call(rbind, cands_max1)) %>%
     mutate(system = "max1")
-  cands_max2 <- as.data.frame(do.call(rbind, cands_max2)) %>%
-    mutate(system = "max2")
-  cands_max3 <- as.data.frame(do.call(rbind, cands_max3)) %>%
-    mutate(system = "max3")
 
   # combine all results
-  cands_chains <- rbind(cands_max1, cands_max2, cands_max3) %>%
+  cands_chains <- rbind(cands_max1) %>%
     tibble()
 
 
   voter_max1 <- as.data.frame(do.call(rbind, voter_max1)) %>%
     mutate(system = "max1")
-  voter_max2 <- as.data.frame(do.call(rbind, voter_max2)) %>%
-    mutate(system = "max2")
-  voter_max3 <- as.data.frame(do.call(rbind, voter_max3)) %>%
-    mutate(system = "max3")
 
   # combine all results
-  voter_chains <- dplyr::bind_rows(voter_max1, voter_max2, voter_max3) %>%
+  voter_chains <- dplyr::bind_rows(voter_max1) %>%
     tibble()
 
   out <- list(
@@ -981,6 +354,8 @@ neodowns <- function(data,
   # FUTURE WORK: Add the summary table for each experiment
   # ADD some warning based on "check"s
 }
+
+
 
 # Burn-in
 # Random Sampling from the Chains (to address autocorrelation)
