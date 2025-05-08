@@ -65,8 +65,6 @@ neodowns <- function(data,
   m_vec <- rep(1:(J/2), 2) # used in J-loop
 
 
-# Chain initialization ---------------------------------------------------------
-
   # Feeding the voter distribution to "initial chain" for both systems
   init <- chain <- d_voters
 
@@ -74,29 +72,13 @@ neodowns <- function(data,
     mutate(c = rnorm(n = N_voters, mean = mu_c, sd = sigma_c),
            b = rnorm(n = N_voters, mean = mu_b, sd = sigma_b))
 
-  # c <- init$c
-  # b <- init$b
 
-  # isseue with c
-  # must change the later part simultanesouly
+# Compute voter utility and candidate expected vote share ---------------------
 
-  # c <- rnorm(n = N_voters, mean = mu_c, sd = sigma_c)
-  # b <- rnorm(n = N_voters, mean = mu_b, sd = sigma_b)
 
-  # Create distance for all candidate
+get_util_vs <- function(init, d_cands, N_voters, esp_sd){
 
-  # for (j in 1:J) {
-  #
-  #   init <- init %>%
-  #     mutate("D{j}" := sqrt((x - d_cands$x[{j}])^2 + (y - d_cands$y[{j}])^2),
-  #            "m{j}" := ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0),
-  #            "eps{j}" := rnorm(n = N_voters, sd = eps_sd),
-  #            "V{j}" := -c * !! as.name(paste0("D",j))
-  #            -b * !! as.name(paste0("m",j))
-  #            + !! as.name(paste0("eps",j))
-  #     )
-  # }
-
+  # Utility function
   for (j in seq_len(J)) {
     D_j <- sqrt((init$x - d_cands$x[j])^2 + (init$y - d_cands$y[j])^2)
     m_j <- ifelse(init$ethnic_group != paste0("Group ", m_vec[j]), 1, 0)
@@ -106,68 +88,34 @@ neodowns <- function(data,
   }
 
 
+  # Choice probability
+  V_mat <- as.matrix(init[, paste0("V", seq_len(J))])
+  expV <- exp(V_mat)
+  V_den <- rowSums(expV)
+
+  for (j in seq_len(J)) {
+    init[[paste0("P", j)]] <- expV[, j] / V_den
+  }
+
+  # Save the sum of probabilities
+  P_cols <- paste0("P", seq_len(J))
+  P_vec <- sapply(P_cols, function(col) sum(init[[col]]))
+  names(P_vec) <- P_cols
 
 
-  # # Mismatch Indicator
-  # m1 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  # m2 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  # m3 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  # m4 <- ifelse(init$ethnic_group != "Group 1", 1, 0)
-  # m5 <- ifelse(init$ethnic_group != "Group 2", 1, 0)
-  # m6 <- ifelse(init$ethnic_group != "Group 3", 1, 0)
-  #
-  # # Random Errors, created outside chains
-  # eps1 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps2 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps3 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps4 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps5 <- rnorm(n = N_voters, sd = eps_sd)
-  # eps6 <- rnorm(n = N_voters, sd = eps_sd)
+# Return
+ list(
+   init = init,
+   P_vec = P_vec
+ )
 
-  # # Computing the observed utility for each party (This is where we specify utility functions)
-  # init$V1 <- -1 * c * init$D1 - b * m1 + eps1
-  # init$V2 <- -1 * c * init$D2 - b * m2 + eps2
-  # init$V3 <- -1 * c * init$D3 - b * m3 + eps3
-  # init$V4 <- -1 * c * init$D4 - b * m4 + eps4
-  # init$V5 <- -1 * c * init$D5 - b * m5 + eps5
-  # init$V6 <- -1 * c * init$D6 - b * m6 + eps6
+}
 
-  # (1): FPTP
-  # Computing the first-choice probability that each voter votes for each party
-  V_den <- exp(init$V1) + exp(init$V2) + exp(init$V3) + exp(init$V4) + exp(init$V5) + exp(init$V6)
-  init$P1 <- exp(init$V1) / V_den
-  init$P2 <- exp(init$V2) / V_den
-  init$P3 <- exp(init$V3) / V_den
-  init$P4 <- exp(init$V4) / V_den
-  init$P5 <- exp(init$V5) / V_den
-  init$P6 <- exp(init$V6) / V_den
+out <- get_util_vs(init, d_cands, N_voters, esp_sd)
 
-  # Probability of co-ethnic voting for each voter
-  init$epsilon1 <- case_when(
-    init$ethnic_group == "Group 1" ~ init$P1 + init$P4,
-    init$ethnic_group == "Group 2" ~ init$P2 + init$P5,
-    init$ethnic_group == "Group 3" ~ init$P3 + init$P6
-  )
 
-  # # Check
-  # mean(is.na(init$epsilon1))
-  # hist(init$epsilon1)
 
-  # Compute the first-choice probability score (sum of all support probabilities)
-  P1_score <- P2_score <- P3_score <- P4_score <- P5_score <- P6_score <- NA
-  P1_score[1] <- sum(init$P1)
-  P2_score[1] <- sum(init$P2)
-  P3_score[1] <- sum(init$P3)
-  P4_score[1] <- sum(init$P4)
-  P5_score[1] <- sum(init$P5)
-  P6_score[1] <- sum(init$P6)
 
-  # First-choice probabilities (for FPTP, RCV1, RCV2)
-  P_vec <- NA
-  P_vec <- rbind(P1_score, P2_score, P3_score, P4_score, P5_score, P6_score)
-
-  # # CHECK: Sum of all first-choice probabilities: they need to sum up to N=1000
-  # print(sum(P_vec)) # First-choice FPTP
 
   # ========================================================================#
   # Updating party positions (initial move_max1)
