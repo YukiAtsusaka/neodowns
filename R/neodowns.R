@@ -87,10 +87,14 @@ neodowns <- function(data,
     P_mat <- expV / rowSums(expV)
     colnames(P_mat) <- paste0("P", seq_len(J))
 
+    # Precompute second-choice denominators
+    V_den_ex_list <- lapply(seq_len(J), function(k) rowSums(expV[, -k, drop = FALSE]))
+    names(V_den_ex_list) <- seq_len(J)
+
     P_s_mat <- matrix(0, nrow = N_voters, ncol = J)
     for (j in seq_len(J)) {
       for (k in setdiff(seq_len(J), j)) {
-        V_den_ex_k <- rowSums(expV[, setdiff(seq_len(J), k), drop = FALSE])
+        V_den_ex_k <- V_den_ex_list[[as.character(k)]]
         contrib <- (expV[, j] / V_den_ex_k) * P_mat[, k]
         P_s_mat[, j] <- P_s_mat[, j] + contrib
       }
@@ -103,6 +107,8 @@ neodowns <- function(data,
     P_all <- rbind(first = P_vec, second = P_s_vec)
     list(d_voters = d_voters, P_vec = P_all)
   }
+
+
 
 
 update_max2 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
@@ -129,54 +135,77 @@ update_max2 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
   list(d_cands = d_cands, theta = new_theta)
 }
 
-  get_util_max3 <- function(d_voters, d_cands, N_voters, eps_sd, m_vec) {
-    J <- nrow(d_cands)
-    V_mat <- matrix(NA_real_, nrow = N_voters, ncol = J)
 
-    for (j in seq_len(J)) {
-      D_j <- sqrt((d_voters$x - d_cands$x[j])^2 + (d_voters$y - d_cands$y[j])^2)
-      m_j <- as.integer(d_voters$ethnic_group != paste0("Group ", m_vec[j]))
-      eps_j <- rnorm(N_voters, sd = eps_sd)
-      V_mat[, j] <- -d_voters$c * D_j - d_voters$b * m_j + eps_j
-    }
+get_util_max3 <- function(d_voters, d_cands, N_voters, eps_sd, m_vec) {
+  J <- nrow(d_cands)
+  V_mat <- matrix(NA_real_, nrow = N_voters, ncol = J)
 
-    expV <- exp(V_mat)
-    P_mat <- expV / rowSums(expV)
-    colnames(P_mat) <- paste0("P", seq_len(J))
-
-    # Second-choice
-    P_s_mat <- matrix(0, nrow = N_voters, ncol = J)
-    for (j in seq_len(J)) {
-      for (k in setdiff(seq_len(J), j)) {
-        V_den_ex_k <- rowSums(expV[, setdiff(seq_len(J), k), drop = FALSE])
-        contrib <- (expV[, j] / V_den_ex_k) * P_mat[, k]
-        P_s_mat[, j] <- P_s_mat[, j] + contrib
-      }
-    }
-    colnames(P_s_mat) <- paste0("P", seq_len(J), "_s")
-
-    # Third-choice
-    P_t_mat <- matrix(0, nrow = N_voters, ncol = J)
-    for (j in seq_len(J)) {
-      for (k1 in setdiff(seq_len(J), j)) {
-        for (k2 in setdiff(setdiff(seq_len(J), j), k1)) {
-          V_den_ex_k1 <- rowSums(expV[, setdiff(seq_len(J), k1), drop = FALSE])
-          V_den_ex_k2 <- rowSums(expV[, setdiff(seq_len(J), k2), drop = FALSE])
-          prob_k1k2 <- (expV[, k2] / V_den_ex_k1) * P_mat[, k1] +
-            (expV[, k1] / V_den_ex_k2) * P_mat[, k2]
-          V_den_ex_pair <- rowSums(expV[, setdiff(seq_len(J), c(k1, k2)), drop = FALSE])
-          P_t_mat[, j] <- P_t_mat[, j] + (expV[, j] / V_den_ex_pair) * prob_k1k2
-        }
-      }
-    }
-    colnames(P_t_mat) <- paste0("P", seq_len(J), "_t")
-
-    d_voters <- dplyr::bind_cols(d_voters, as.data.frame(P_mat), as.data.frame(P_s_mat), as.data.frame(P_t_mat))
-    P_vec <- rbind(colSums(P_mat), colSums(P_s_mat), colSums(P_t_mat))
-    rownames(P_vec) <- c("first", "second", "third")
-
-    list(d_voters = d_voters, P_vec = P_vec)
+  for (j in seq_len(J)) {
+    D_j <- sqrt((d_voters$x - d_cands$x[j])^2 + (d_voters$y - d_cands$y[j])^2)
+    m_j <- as.integer(d_voters$ethnic_group != paste0("Group ", m_vec[j]))
+    eps_j <- rnorm(N_voters, sd = eps_sd)
+    V_mat[, j] <- -d_voters$c * D_j - d_voters$b * m_j + eps_j
   }
+
+  expV <- exp(V_mat)
+  P_mat <- expV / rowSums(expV)
+  colnames(P_mat) <- paste0("P", seq_len(J))
+
+  # Precompute second-choice denominators
+  V_den_ex_list <- lapply(seq_len(J), function(k) rowSums(expV[, -k, drop = FALSE]))
+  names(V_den_ex_list) <- seq_len(J)
+
+  # Second-choice
+  P_s_mat <- matrix(0, nrow = N_voters, ncol = J)
+  for (j in seq_len(J)) {
+    for (k in setdiff(seq_len(J), j)) {
+      V_den_ex_k <- V_den_ex_list[[as.character(k)]]
+      contrib <- (expV[, j] / V_den_ex_k) * P_mat[, k]
+      P_s_mat[, j] <- P_s_mat[, j] + contrib
+    }
+  }
+  colnames(P_s_mat) <- paste0("P", seq_len(J), "_s")
+
+  # Precompute third-choice pairwise denominators
+  combs <- combn(seq_len(J), 2, simplify = FALSE)
+  V_den_ex_pair_list <- list()
+  for (pair in combs) {
+    key <- paste(sort(pair), collapse = ",")
+    V_den_ex_pair_list[[key]] <- rowSums(expV[, -pair, drop = FALSE])
+  }
+
+  # Third-choice
+  P_t_mat <- matrix(0, nrow = N_voters, ncol = J)
+  for (j in seq_len(J)) {
+    others <- setdiff(seq_len(J), j)
+    combs_j <- combn(others, 2, simplify = FALSE)
+
+    for (pair in combs_j) {
+      k1 <- pair[1]
+      k2 <- pair[2]
+      key <- paste(sort(pair), collapse = ",")
+
+      V_den_ex_k1 <- V_den_ex_list[[as.character(k1)]]
+      V_den_ex_k2 <- V_den_ex_list[[as.character(k2)]]
+      V_den_ex_pair <- V_den_ex_pair_list[[key]]
+
+      prob_k1k2 <- (expV[, k2] / V_den_ex_k1) * P_mat[, k1] +
+        (expV[, k1] / V_den_ex_k2) * P_mat[, k2]
+
+      P_t_mat[, j] <- P_t_mat[, j] + (expV[, j] / V_den_ex_pair) * prob_k1k2
+    }
+  }
+  colnames(P_t_mat) <- paste0("P", seq_len(J), "_t")
+
+  d_voters <- dplyr::bind_cols(d_voters, as.data.frame(P_mat), as.data.frame(P_s_mat), as.data.frame(P_t_mat))
+  P_vec <- rbind(colSums(P_mat), colSums(P_s_mat), colSums(P_t_mat))
+  rownames(P_vec) <- c("first", "second", "third")
+
+  list(d_voters = d_voters, P_vec = P_vec)
+}
+
+
+
 
 update_max3 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
   stopifnot(nrow(p_now) == 3)
