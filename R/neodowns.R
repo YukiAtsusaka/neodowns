@@ -103,25 +103,31 @@ neodowns <- function(data,
     P_all <- rbind(first = P_vec, second = P_s_vec)
     list(d_voters = d_voters, P_vec = P_all)
   }
+
+
+update_max2 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
+  stopifnot(nrow(p_now) == 2)
+  J <- ncol(p_now)
+
+  P_before_first <- p_before[1, ]
+  P_before_second <- p_before[2, ]
+  P_now_first <- p_now[1, ]
+  P_now_second <- p_now[2, ]
+
+  new_theta <- numeric(J)
+  improve <- (P_now_first >= P_before_first) & (P_now_second >= P_before_second)
+  new_theta[improve] <- theta[improve]
+  new_theta[!improve] <- runif(sum(!improve), min = theta[!improve] + 90, max = theta[!improve] + 270)
+
+  rad_theta <- new_theta * pi / 180
+  dx <- cos(rad_theta) * unit
+  dy <- sin(rad_theta) * unit
+
+  d_cands$x <- d_cands$x + dx
+  d_cands$y <- d_cands$y + dy
+
+  list(d_cands = d_cands, theta = new_theta)
 }
-
-
-  update_max2 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
-    stopifnot(!is.null(attr(p_now, "P_s_vec")))
-    P_s_before <- attr(p_before, "P_s_vec")
-    P_s_now <- attr(p_now, "P_s_vec")
-    J <- nrow(d_cands)
-    new_theta <- numeric(J)
-    improve <- (p_now >= p_before) & (P_s_now >= P_s_before)
-    new_theta[improve] <- theta[improve]
-    new_theta[!improve] <- runif(sum(!improve), min = theta[!improve] + 90, max = theta[!improve] + 270)
-    rad_theta <- new_theta * pi / 180
-    dx <- cos(rad_theta) * unit
-    dy <- sin(rad_theta) * unit
-    d_cands$x <- d_cands$x + dx
-    d_cands$y <- d_cands$y + dy
-    list(d_cands = d_cands, theta = new_theta)
-  }
 
 # Implement the simulation -----------------------------------------------------
 
@@ -177,7 +183,8 @@ neodowns <- function(data,
 
 
 # Initialize before the loop
-  p_before <- rep(NA_real_, J)
+  p_before <- matrix(NA_real_, nrow = 2, ncol = J)
+  rownames(p_before) <- c("first", "second")
   chain_voters <- list()
   chain_cands <- list()
 
@@ -221,7 +228,7 @@ out <- list(
 return(out)
 }
 
-#
+
 # # # Check via visualization
 # out1$cands %>%
 # #  filter(iter > 1000) %>%
