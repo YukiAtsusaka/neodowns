@@ -6,16 +6,14 @@
 \usage{
 neodowns(
   data,
-  n_iter = 3000,
+  strategy = "max1",
+  n_iter = 100,
   mu_c = 1,
   mu_b = 2,
   sigma_c = 0.5,
   sigma_b = 0.5,
   eps_sd = 0.5,
   unit = 0.05,
-  force = TRUE,
-  while_max = 200,
-  boost = 6,
   seed = 14231
 )
 }

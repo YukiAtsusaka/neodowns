@@ -4,7 +4,7 @@
 \alias{extract_ethnic_vote}
 \title{Extracting quantities of interest from computer simulations}
 \usage{
-extract_ethnic_vote(out, n_burn = 1000, int = 10)
+extract_ethnic_vote(out, n_burn = 1000, int = 10, n_iter = 1000)
 }
 \arguments{
 \item{out}{output from \code{neodowns}}

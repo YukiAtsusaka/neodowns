@@ -32,9 +32,6 @@ neodowns <- function(data,
                      sigma_b = 0.5,
                      eps_sd = 0.5,
                      unit = 0.05,
-                     # force = TRUE,
-                     # while_max = 200,
-                     # boost = 6,
                      seed = 14231) {
 
 # Compute voter utility and candidate expected vote share ----------------------
@@ -293,8 +290,8 @@ pb <- progress_bar$new(
 # Initialize before the loop
   p_before <- matrix(NA_real_, nrow = 3, ncol = J)
   rownames(p_before) <- c("first", "second", "third")
-  chain_voters <- list()
-  chain_cands <- list()
+  chain_voters <- vector("list", n_iter)  # Preallocate list
+  chain_cands <- vector("list", n_iter)  # Preallocate list
 
 # Loop over iterations
   for (t in seq_len(n_iter)) {
