@@ -10,9 +10,6 @@
 #' @param sigma_b Parameter that controls for the standard deviation around b
 #' @param eps_sd Parameter that controls for the level of idiosyncratic factors.
 #' @param unit Unit with which candidates move in the two-dimensional space.
-#' @param force Logical value for forcing moderate candidates taking more moderate positions than extreme candidates within each group.
-#' @param while_max Number of trials to apply `force`
-#' @param boost Unit by which a simulation pushes a stuck candidate out of a trap.
 #'  @return
 #' A list, which has the following components:
 #'  \item{d_voters}{a matrix containing the simulated ideological positions of voters.}
