@@ -21,7 +21,7 @@
 
 
 neodowns <- function(data,
-                     strategy = "max1",
+                     strategy = NULL,
                      n_iter = 100,
                      mu_c = 1, # average spatial voting
                      mu_b = 2, # average co-ethnic voting
@@ -30,6 +30,7 @@ neodowns <- function(data,
                      eps_sd = 0.5,
                      unit = 0.05,
                      seed = 14231) {
+
 
 # Compute voter utility and candidate expected vote share ----------------------
 
@@ -230,20 +231,30 @@ update_max3 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
   list(d_cands = d_cands, theta = new_theta)
 }
 
+# Candidate-specific strategy functions
+strategy_map <- list(
+  max1 = list(util = get_util_max1, update = update_max1),
+  max2 = list(util = get_util_max2, update = update_max2),
+  max3 = list(util = get_util_max3, update = update_max3)
+)
+
+
+pb <- progress_bar$new(
+  format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
+  total = n_iter,
+  complete = "=",   # completion bar character
+  incomplete = "-", # incomplete bar character
+  current = ">",    # current bar character
+  clear = FALSE,    # if TRUE, clears the bar when finish
+  width = 100       # width of the progress bar
+)
+
 
 # Implement the simulation -----------------------------------------------------
 
-pb <- progress_bar$new(
-      format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
-      total = n_iter,
-      complete = "=",   # completion bar character
-      incomplete = "-", # incomplete bar character
-      current = ">",    # current bar character
-      clear = FALSE,    # if TRUE, clears the bar when finish
-      width = 100       # width of the progress bar
-    )
-
-  # # # # # # Only for debuggin
+  # Only for debuggin
+  #   strategy = c("max1", "max1", "max1",
+  #                "max1", "max1", "max3")
   #   n_iter = 100
   #   mu_c = 1 # average spatial voting
   #   mu_b = 2 # average co-ethnic voting
@@ -264,6 +275,12 @@ pb <- progress_bar$new(
   n_iter <- n_iter
   J <- dim(d_cands)[1] # number of candidates
 
+  ##  Validate strategy length
+
+  if (is.null(strategy)) strategy <- rep("max1", J)
+  if (length(strategy) != J) stop("Length of strategy vector must match number of candidates.")
+
+
   # Fixed parameters, created outside chains
   N_voters <- dim(d_voters)[1]
   m_vec <- rep(1:(J/2), 2) # used in J-loop
@@ -271,28 +288,14 @@ pb <- progress_bar$new(
   d_voters$c <- rnorm(N_voters, mu_c, sigma_c)
   d_voters$b <- rnorm(N_voters, mu_b, sigma_b)
 
-  get_util <- switch(strategy,
-                     max1 = get_util_max1,
-                     max2 = get_util_max2,
-                     max3 = get_util_max3,
-                     stop("Invalid strategy. Use 'max1', 'max2', or 'max3'."))
-
-  update_positions <- switch(strategy,
-                             max1 = update_max1,
-                             max2 = update_max2,
-                             max3 = update_max3,
-                             stop("Invalid strategy. Use 'max1', 'max2', or 'max3'."))
-
-
-# Initialize before the loop
+  # Initialize chains
   p_before <- matrix(NA_real_, nrow = 3, ncol = J)
   rownames(p_before) <- c("first", "second", "third")
-  chain_voters <- vector("list", n_iter)  # Preallocate list
-  chain_cands <- vector("list", n_iter)  # Preallocate list
+  chain_voters <- vector("list", n_iter)
+  chain_cands <- vector("list", n_iter)
 
-# Loop over iterations
+
   for (t in seq_len(n_iter)) {
-
     pb$tick()
 
     if (t == 1) {
@@ -302,70 +305,101 @@ pb <- progress_bar$new(
       d_cands <- chain_cands[[t - 1]]$d_cands
     }
 
-    chain_voters[[t]] <- get_util(d_voters, d_cands, N_voters, eps_sd, m_vec)
-    p_now <- chain_voters[[t]]$P_vec
+    # <-- MODIFIED: Evaluate full utilities with max3 to retain all info
+    full_util <- get_util_max3(d_voters, d_cands, N_voters, eps_sd, m_vec)
+    chain_voters[[t]] <- full_util
+    P_now_all <- full_util$P_vec
 
-    chain_cands[[t]] <- update_positions(
-      chain_voters[[t]]$d_voters,
-      d_cands,
-      theta,
-      unit,
-      p_before = if (t == 1) p_now else p_before,
-      p_now = p_now
-    )
 
+    # <-- MODIFIED: Loop through candidates individually to update positions
+    for (j in seq_len(J)) {
+      strat_j <- strategy[[j]]
+      update_fun <- strategy_map[[strat_j]]$update
+
+      p_now_j <- switch(strat_j,
+                        max1 = matrix(P_now_all[1, j], nrow = 1),
+                        max2 = matrix(P_now_all[1:2, j], nrow = 2),
+                        max3 = matrix(P_now_all[1:3, j], nrow = 3))
+
+      p_before_j <- switch(strat_j,
+                           max1 = matrix(if (t == 1) P_now_all[1, j] else p_before[1, j], nrow = 1),
+                           max2 = matrix(if (t == 1) P_now_all[1:2, j] else p_before[1:2, j], nrow = 2),
+                           max3 = matrix(if (t == 1) P_now_all[1:3, j] else p_before[1:3, j], nrow = 3))
+
+      update_res <- update_fun(
+        full_util$d_voters,
+        d_cands[j, , drop = FALSE],
+        theta[j],
+        unit,
+        p_before = p_before_j,
+        p_now = p_now_j
+      )
+
+      d_cands[j, c("x", "y")] <- update_res$d_cands[1, c("x", "y")]
+      theta[j] <- update_res$theta[1]
+    } # End of j loop
+
+
+    chain_cands[[t]] <- list(d_cands = d_cands, theta = theta)
     chain_voters[[t]]$d_voters$iter <- t
     chain_cands[[t]]$d_cands$iter <- t
-    p_before <- p_now
-  }
+    chain_cands[[t]]$d_cands$strategy <- strategy
 
+    p_before <- P_now_all
+  } # End of t loop
 
+  out_voters <- bind_rows(purrr::map(chain_voters, "d_voters")) %>% tibble()
+  out_cands <- bind_rows(purrr::map(chain_cands, "d_cands")) %>% tibble()
 
-# combine all results
-out_voters <- bind_rows(purrr::map(chain_voters, "d_voters")) %>% tibble()
-out_cands <- bind_rows(purrr::map(chain_cands, "d_cands")) %>% tibble()
-
-
-out <- list(
-  voters = out_voters,
-  cands = out_cands
-)
-
-return(out)
+  out <- list(
+    voters = out_voters,
+    cands = out_cands
+  )
+  return(out)
 }
 
 
-# # # # Check via visualization
-# out1 <- neodowns(data, strategy = "max1", n_iter = 2000)
-# out2 <- neodowns(data, strategy = "max2", n_iter = 2000)
-# out3 <- neodowns(data, strategy = "max3", n_iter = 2000)
+# # # # # Check via visualization
+# # data <- sim_data(N_groups = 3)
+# out1 <- neodowns(data,
+#                  strategy = c("max1", "max1", "max1", "max1", "max1", "max2"),
+#                  n_iter = 500)
+# out2 <- neodowns(data,
+#                  strategy = c("max2", "max2", "max2", "max2", "max2", "max3"),
+#                  n_iter = 500)
+# out3 <- neodowns(data,
+#                  strategy = c("max3", "max3", "max3", "max3", "max3", "max1"),
+#                  n_iter = 500)
 #
-# cands1 <- out1$cands %>% mutate(strategy = "max1")
-# cands2 <- out2$cands %>% mutate(strategy = "max2")
-# cands3 <- out3$cands %>% mutate(strategy = "max3")
 #
+#
+# cands1 <- out1$cands %>% mutate(config = "111112")
+# cands2 <- out2$cands %>% mutate(config = "222223")
+# cands3 <- out3$cands %>% mutate(config = "333331")
+#
+#
+# #
 # cands_all <- bind_rows(cands1, cands2, cands3)
 #
 #
 # cands_all %>%
-# #  filter(iter > 1000) %>%
-# ggplot(aes(x = x, y = y, color = party, group = party)) +
+# ggplot(aes(x = x, y = y, color = strategy, group = party)) +
 #   geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
 #   geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
 #   geom_path(linewidth = 0.01, arrow = arrow(type = "open", length = unit(0.15, "cm"))) +
 #   geom_point(alpha = 0.7, size = 0.05) +
 #   geom_point(data = subset(out1$cands, iter == 1),
-#              shape = 21, fill = "black", size = 3, stroke = 1.2) +
+#              shape = 21, color = "gray", fill = "black", size = 3, stroke = 1.2) +
 #   geom_text(data = subset(out1$cands, iter == 1),
 #             aes(label = party), vjust = -1, size = 3, color = "black") +
 #   labs(
-#     title = "Trajectory of Candidate Positions Over Iterations",
-#     x = "", y = "", color = "Candidate ID"
+#     title = "Letting Candidates Use Different Strategies",
+#     x = "", y = "", color = "strategy"
 #   ) +
 #   coord_equal() +
 #   theme_minimal() +
-#   facet_wrap(~ strategy) +
-#   theme(legend.position = "none")
+#   facet_wrap(~ config) +
+#   theme(legend.position = "top")
 
 
 
