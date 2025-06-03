@@ -359,17 +359,20 @@ pb <- progress_bar$new(
 }
 
 
-# # # # # Check via visualization
-# # data <- sim_data(N_groups = 3)
+# # Check via visualization
+# data <- sim_data(N_groups = 3, n_cands_by_group = c(10, 2, 1))
 # out1 <- neodowns(data,
-#                  strategy = c("max1", "max1", "max1", "max1", "max1", "max2"),
-#                  n_iter = 500)
+#                  strategy = c("max1", "max1", "max1", "max1", "max1", "max2",
+#                               "max1", "max1", "max1", "max1", "max1", "max2", "max1"),
+#                  n_iter = 100)
 # out2 <- neodowns(data,
-#                  strategy = c("max2", "max2", "max2", "max2", "max2", "max3"),
-#                  n_iter = 500)
+#                  strategy = c("max2", "max2", "max2", "max2", "max2", "max3",
+#                               "max1", "max1", "max1", "max1", "max1", "max2", "max1"),
+#                  n_iter = 100)
 # out3 <- neodowns(data,
-#                  strategy = c("max3", "max3", "max3", "max3", "max3", "max1"),
-#                  n_iter = 500)
+#                  strategy = c("max3", "max3", "max3", "max3", "max3", "max1",
+#                               "max1", "max1", "max1", "max1", "max1", "max2", "max1"),
+#                  n_iter = 100)
 #
 #
 #
@@ -383,7 +386,7 @@ pb <- progress_bar$new(
 #
 #
 # cands_all %>%
-# ggplot(aes(x = x, y = y, color = strategy, group = party)) +
+# ggplot(aes(x = x, y = y, color = ethnic_group, group = candidate)) +
 #   geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
 #   geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
 #   geom_path(linewidth = 0.01, arrow = arrow(type = "open", length = unit(0.15, "cm"))) +
@@ -391,10 +394,10 @@ pb <- progress_bar$new(
 #   geom_point(data = subset(out1$cands, iter == 1),
 #              shape = 21, color = "gray", fill = "black", size = 3, stroke = 1.2) +
 #   geom_text(data = subset(out1$cands, iter == 1),
-#             aes(label = party), vjust = -1, size = 3, color = "black") +
+#             aes(label = candidate), vjust = -1, size = 3, color = "black") +
 #   labs(
-#     title = "Letting Candidates Use Different Strategies",
-#     x = "", y = "", color = "strategy"
+#     title = "Flexible Number of Candidates Per Group",
+#     x = "", y = "", color = "group"
 #   ) +
 #   coord_equal() +
 #   theme_minimal() +

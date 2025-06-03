@@ -6,7 +6,7 @@
 \usage{
 neodowns(
   data,
-  strategy = "max1",
+  strategy = NULL,
   n_iter = 100,
   mu_c = 1,
   mu_b = 2,
@@ -32,13 +32,7 @@ neodowns(
 
 \item{eps_sd}{Parameter that controls for the level of idiosyncratic factors.}
 
-\item{unit}{Unit with which candidates move in the two-dimensional space.}
-
-\item{force}{Logical value for forcing moderate candidates taking more moderate positions than extreme candidates within each group.}
-
-\item{while_max}{Number of trials to apply \code{force}}
-
-\item{boost}{Unit by which a simulation pushes a stuck candidate out of a trap.
+\item{unit}{Unit with which candidates move in the two-dimensional space.
 @return
 A list, which has the following components:
 \item{d_voters}{a matrix containing the simulated ideological positions of voters.}
