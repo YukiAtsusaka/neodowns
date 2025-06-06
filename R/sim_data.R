@@ -105,13 +105,13 @@ sim_data <- function(N_voters = 1000,
     direction <- c(cos(angle_rad), sin(angle_rad))
     center <- direction * init
     n_cand <- n_cands_by_group[g]
-    pos_seq <- seq(-1, 1, length.out = n_cand)
+    pos_seq <- seq(1/n_cand, 1, length.out = n_cand)
 
     cand_df <- data.frame(
       group = g,
       ethnic_group = paste0("Group ", g),
-      x = center[1] + pos_seq * init * 0.5,
-      y = center[2] + pos_seq * init * 0.5,
+      x = center[1] * pos_seq * init,
+      y = center[2] * pos_seq * init,
       candidate = candidate_counter:(candidate_counter + n_cand - 1)  # 🆕 Unique ID
     )
 
