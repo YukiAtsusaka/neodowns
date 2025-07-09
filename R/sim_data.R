@@ -30,7 +30,7 @@ sim_data <- function(N_voters = 1000,
                      init = 1,
                      eth = 1/3,
                      seed = 1524,
-                     n_cands_by_group = rep(2, N_groups)  # vector of candidate counts by group
+                     n_candidates = N_groups*2  # number of candidates, defaults to number of groups times two
 ) {
   set.seed(seed)
 
@@ -91,35 +91,6 @@ sim_data <- function(N_voters = 1000,
     voters$y <- voters$cy + clusters$y[voters$eth] * init * 1.2 + clusty
   }
 
-  # Validate input length
-  if (length(n_cands_by_group) != N_groups) {
-    stop("Length of n_cands_by_group must equal N_groups.")
-  }
-
-  # Generalized candidate generation (simplified)
-  cand_list <- vector("list", N_groups)
-  candidate_counter <- 1  # 🆕 Unique candidate ID
-
-  for (g in 1:N_groups) {
-    angle_rad <- starting_angles[g] * pi / 180
-    direction <- c(cos(angle_rad), sin(angle_rad))
-    center <- direction * init
-    n_cand <- n_cands_by_group[g]
-    pos_seq <- seq(1/n_cand, 1, length.out = n_cand)
-
-    cand_df <- data.frame(
-      group = g,
-      ethnic_group = paste0("Group ", g),
-      x = center[1] * pos_seq * init,
-      y = center[2] * pos_seq * init,
-      candidate = candidate_counter:(candidate_counter + n_cand - 1)  # 🆕 Unique ID
-    )
-
-    candidate_counter <- candidate_counter + n_cand  # 🆕 Increment
-    cand_list[[g]] <- cand_df
-  }
-
-  cands <- bind_rows(cand_list)
 
   voters <- voters %>%
     mutate(
@@ -131,8 +102,7 @@ sim_data <- function(N_voters = 1000,
     dplyr::select(group, ethnic_group, x, y) %>%
     tibble()
 
-  cands <- cands %>%
-    dplyr::select(group, ethnic_group, x, y, candidate)  # 🆕 Final structure
+  cands <- voters%>% sample_n(n_candidates) %>% mutate(candidate =1:n_candidates)
 
   out <- list(
     gen_voters = voters,
