@@ -2,8 +2,8 @@
 #'
 #' @description `sim_data()` simulates ideological positions of voters and candidates.
 #'
-#' @param N_voters Number of voters in the simulation.
-#' @param N_groups Number of groups in the simulation.
+#' @param n_voter Number of voters in the simulation.
+#' @param n_group Number of groups in the simulation.
 #' @param skew Skew---s parameter---of the zipf distribution for generating relative balance of ethnic groups,
 #' a high skew implies the biggest group is much bigger then other groups while
 #' a low skew implies more balance,
@@ -33,26 +33,26 @@ sim_data <- function(n_voter = 1000,
                      ) {
 
   # Step 1: Generate voters' ethnicity
-  ethnic_group <- rzipf(N_voters, N = N_groups, s = skew)
+  ethnic_group <- rzipf(n_voter, N = n_group, s = skew)
   ethnic <- tabulate(ethnic_group)
   freq <- ethnic / sum(ethnic)
 
   voters <- data.frame(ethnic_group)
-  voters$cx <- rnorm(N_voters, 0, dev) / 4
-  voters$cy <- rnorm(N_voters, 0, dev) / 4
+  voters$cx <- rnorm(n_voter, 0, dev) / 4
+  voters$cy <- rnorm(n_voter, 0, dev) / 4
 
   shares <- 360 * freq
   sharediv <- shares / 2
-  angles <- c(0, sharediv[1:N_groups - 1] + sharediv[2:N_groups])
+  angles <- c(0, sharediv[1:n_group - 1] + sharediv[2:n_group])
   starting_angles <- cumsum(angles) + 15
 
-  u <- runif(n = N_voters, min = -1, max = 1)
-  rand <- u * N_groups * eth * shares[voters$ethnic_group] / 2
-  voters$eth <- ifelse(runif(N_voters, 0, 1) < eth / 2, sample(1:3, N_voters, replace = TRUE), voters$ethnic_group)
+  u <- runif(n = n_voter, min = -1, max = 1)
+  rand <- u * n_group * eth * shares[voters$ethnic_group] / 2
+  voters$eth <- ifelse(runif(n_voter, 0, 1) < eth / 2, sample(1:3, n_voter, replace = TRUE), voters$ethnic_group)
   voterAngle <- starting_angles[voters$ethnic_group] + rand
   voterAngle_f <- starting_angles[voters$eth]
 
-  myR <- rrayleigh(N_voters, init)
+  myR <- rrayleigh(n_voter, init)
 
   if (dist != "Fan") {
     v1 <- cos(voterAngle * pi / 180)
@@ -67,7 +67,7 @@ sim_data <- function(n_voter = 1000,
       voters <- voters[order(voters$ethnic_group), ]
       cutoff <- sum(ethnic[1:floor(length(ethnic) / 2)])
       voters$x[1:cutoff] <- voters$x[1:cutoff] / 10 + rnorm(cutoff, init, dev / 2)
-      voters$x[(cutoff + 1):N_voters] <- voters$x[(cutoff + 1):N_voters] / 10 + rnorm(N_voters - cutoff, -init, dev / 2)
+      voters$x[(cutoff + 1):n_voter] <- voters$x[(cutoff + 1):n_voter] / 10 + rnorm(n_voter - cutoff, -init, dev / 2)
     }
 
   } else {
@@ -78,13 +78,13 @@ sim_data <- function(n_voter = 1000,
   }
 
   if (dist == "Clustered") {
-    clusters <- data.frame(group = c(1:N_groups))
+    clusters <- data.frame(group = c(1:n_group))
     v1 <- cos(starting_angles * pi / 180)
     v2 <- sin(starting_angles * pi / 180)
     clusters$x <- v1 * 1.5 * init
     clusters$y <- v2 * 1.5 * init
-    clustx <- rnorm(N_voters, 0, dev / N_groups)
-    clusty <- rnorm(N_voters, 0, dev / N_groups)
+    clustx <- rnorm(n_voter, 0, dev / n_group)
+    clusty <- rnorm(n_voter, 0, dev / n_group)
     voters$x <- voters$cx + clusters$x[voters$eth] * init * 1.2 + clustx
     voters$y <- voters$cy + clusters$y[voters$eth] * init * 1.2 + clusty
   }
@@ -104,13 +104,13 @@ sim_data <- function(n_voter = 1000,
 
   # Generate candidates
   cands <- voters%>%
-    dplyr::sample_n(n_candidates) %>%
-    dplyr::mutate(candidate = 1:n_candidates)
+    dplyr::sample_n(n_cand) %>%
+    dplyr::mutate(candidate = 1:n_cand)
 
 
   # Output
   out <- list(
-    gen_voters = voters,
+    gen_voter = voters,
     gen_cands = cands
   )
 
