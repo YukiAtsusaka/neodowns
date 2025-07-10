@@ -5,21 +5,17 @@
 \title{Simulate voter and candidate data}
 \usage{
 sim_data(
-  N_voters = 1000,
-  N_groups = 3,
+  n_voter = 1000,
+  n_cand = 3,
+  n_group = 3,
   skew = 2,
   dev = 0.75,
   dist = "Normal",
   init = 1,
-  eth = 1,
-  n_candidates = 3
+  eth = 1
 )
 }
 \arguments{
-\item{N_voters}{Number of voters in the simulation.}
-
-\item{N_groups}{Number of groups in the simulation.}
-
 \item{skew}{Skew---s parameter---of the zipf distribution for generating relative balance of ethnic groups,
 a high skew implies the biggest group is much bigger then other groups while
 a low skew implies more balance,
@@ -36,6 +32,10 @@ a low init parameter implies groups clustered around the origin with significant
 
 \item{eth}{Parameter that controls for the separation of ideological space by ethnicity.
 eth = 0 is the maximum and eth = 1 is the minimum separation.}
+
+\item{N_voters}{Number of voters in the simulation.}
+
+\item{N_groups}{Number of groups in the simulation.}
 
 \item{seed}{Random seed for reproducibility.}
 }

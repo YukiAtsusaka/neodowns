@@ -22,14 +22,15 @@
 #' @importFrom VGAM rzipf rrayleigh
 #' @export
 
-sim_data <- function(N_voters = 1000,
-                     N_groups = 3,
+sim_data <- function(n_voter = 1000,
+                     n_cand = 3,
+                     n_group = 3,
                      skew = 2,
                      dev = 0.75,
                      dist = "Normal",
                      init = 1,
-                     eth = 1,
-                     n_candidates = 3) {
+                     eth = 1
+                     ) {
 
   # Step 1: Generate voters' ethnicity
   ethnic_group <- rzipf(N_voters, N = N_groups, s = skew)
@@ -115,3 +116,6 @@ sim_data <- function(N_voters = 1000,
 
   return(out)
 }
+
+
+
