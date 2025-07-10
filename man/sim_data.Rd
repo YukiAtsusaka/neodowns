@@ -7,13 +7,12 @@
 sim_data(
   N_voters = 1000,
   N_groups = 3,
-  skew = 0.3,
+  skew = 2,
   dev = 0.75,
   dist = "Normal",
   init = 1,
-  eth = 1/3,
-  seed = 1524,
-  n_cands_by_group = rep(2, N_groups)
+  eth = 1,
+  n_candidates = 3
 )
 }
 \arguments{

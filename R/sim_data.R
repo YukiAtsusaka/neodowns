@@ -17,22 +17,19 @@
 #' @param eth Parameter that controls for the separation of ideological space by ethnicity.
 #' eth = 0 is the maximum and eth = 1 is the minimum separation.
 #' @param seed Random seed for reproducibility.
-#' @importFrom dplyr case_when `%>%` mutate select left_join
+#' @importFrom dplyr case_when `%>%` mutate select left_join sample_n
 #' @importFrom tidyr pivot_longer
 #' @importFrom VGAM rzipf rrayleigh
 #' @export
 
 sim_data <- function(N_voters = 1000,
                      N_groups = 3,
-                     skew = 0.3,
+                     skew = 2,
                      dev = 0.75,
                      dist = "Normal",
                      init = 1,
-                     eth = 1/3,
-                     seed = 1524,
-                     n_candidates = N_groups*2  # number of candidates, defaults to number of groups times two
-) {
-  set.seed(seed)
+                     eth = 1,
+                     n_candidates = 3) {
 
   # Step 1: Generate voters' ethnicity
   ethnic_group <- rzipf(N_voters, N = N_groups, s = skew)
@@ -92,6 +89,7 @@ sim_data <- function(N_voters = 1000,
   }
 
 
+  # Finalize voters
   voters <- voters %>%
     mutate(
       x = case_when(x > 4 ~ 4, x < -4 ~ -4, TRUE ~ x),
@@ -102,8 +100,14 @@ sim_data <- function(N_voters = 1000,
     dplyr::select(group, ethnic_group, x, y) %>%
     tibble()
 
-  cands <- voters%>% sample_n(n_candidates) %>% mutate(candidate =1:n_candidates)
 
+  # Generate candidates
+  cands <- voters%>%
+    dplyr::sample_n(n_candidates) %>%
+    dplyr::mutate(candidate = 1:n_candidates)
+
+
+  # Output
   out <- list(
     gen_voters = voters,
     gen_cands = cands
