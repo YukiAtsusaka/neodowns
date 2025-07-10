@@ -110,7 +110,7 @@ sim_data <- function(n_voter = 1000,
 
   # Output
   out <- list(
-    gen_voter = voters,
+    gen_voters = voters,
     gen_cands = cands
   )
 
