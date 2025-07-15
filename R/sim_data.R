@@ -29,8 +29,11 @@ sim_data <- function(n_voter = 1000,
                      dev = 0.75,
                      dist = "Normal",
                      init = 1,
-                     eth = 1
+                     eth = 1,
+                     seed = NULL
                      ) {
+
+  set.seed(seed)
 
   # Step 1: Generate voters' ethnicity
   ethnic_group <- rzipf(n_voter, N = n_group, s = skew)
@@ -43,7 +46,8 @@ sim_data <- function(n_voter = 1000,
 
   shares <- 360 * freq
   sharediv <- shares / 2
-  angles <- c(0, sharediv[1:n_group - 1] + sharediv[2:n_group])
+#  angles <- c(0, sharediv[1:n_group - 1] + sharediv[2:n_group]) this causes an errro when n.group = 1
+  angles <- c(0, head(sharediv, -1) + tail(sharediv, -1))
   starting_angles <- cumsum(angles) + 15
 
   u <- runif(n = n_voter, min = -1, max = 1)
