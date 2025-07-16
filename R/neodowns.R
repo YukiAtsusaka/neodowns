@@ -202,7 +202,7 @@ get_util_max3 <- function(d_voters, d_cands, N_voters, eps_sd, m_vec) {
 
 
 
-update_max3 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
+  update_max3 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
   stopifnot(nrow(p_now) == 3)
   J <- ncol(p_now)
 
@@ -232,6 +232,7 @@ update_max3 <- function(chain, d_cands, theta, unit = 0.05, p_before, p_now) {
 }
 
 # Candidate-specific strategy functions
+
 strategy_map <- list(
   max1 = list(util = get_util_max1, update = update_max1),
   max2 = list(util = get_util_max2, update = update_max2),
@@ -279,6 +280,10 @@ pb <- progress_bar$new(
 
   if (is.null(strategy)) strategy <- rep("max1", J)
   if (length(strategy) != J) stop("Length of strategy vector must match number of candidates.")
+  if (J < 3 && any(strategy == "max3")) {
+    warning("max3 requires at least 3 candidates. Downgrading all 'max3' strategies to 'max2'.")
+    strategy[strategy == "max3"] <- "max2"
+  } # To avoid errors for two-candidate races
 
 
   # Fixed parameters, created outside chains
