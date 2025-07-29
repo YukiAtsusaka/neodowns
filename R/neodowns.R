@@ -218,21 +218,45 @@ pb <- progress_bar$new(
 
 # Implement the simulation -----------------------------------------------------
 
-  # Only for debuggin
-  #   strategy = c("max1", "max1", "max1",
-  #                "max1", "max1", "max3")
-  #   n_iter = 100
-  #   mu_c = 1 # average spatial voting
-  #   mu_b = 2 # average co-ethnic voting
-  #   sigma_c = 0.5
-  #   sigma_b = 0.5
-  #   eps_sd = 0.5
-  #   unit = 0.05
-  #   seed = 14231
-  #
-  # data <- sim_data()
+# ## Only for debuggin
+# ## The following needs a theoretical range
+# n.cand = 3
+# n.group = 2
+#
+# s.skew <- runif(n = 1, min = 0, max = 1)
+# s.dev <- runif(n = 1, min = 0, max = 1)
+# s.dist <- sample(c("Normal", "Fan", "Flat", "Polarized", "Clustered"), size = 1)
+# s.init <- runif(n = 1, min = 0, max = 1)
+# s.eth <- runif(n = 1, min = 0, max = 1)
+#
+# paste0("n.cand:", n.cand, " | ", "n.group:", n.group, " | ",
+#        "skew:", s.skew, " | ", "dev:", s.dev, " | ",
+#        "dist:", s.dist, " | ",  "init:", s.init, " | ",
+#        "eth:", s.eth)
+#
+# seed <- 123
+# unit = 0.05
+# # Generate data
+# data <- sim_data(n_voter = 500,
+#                n_cand = n.cand,
+#                n_group = n.group,
+#                skew = s.skew,
+#                dev = s.dev,
+#                dist = s.dist,
+#                init = s.init,
+#                eth = s.eth)
+#
+# n_iter <- 20
+# strategy_name <- "max1"
+#
+# strategy <- rep(strategy_name, n.cand) # fixing the strategy for all candidates
+# mu_c <- runif(1, min = 0, max = 2)
+# mu_b <- runif(1, min = 0, max = 4)
+# eps_sd <- runif(1, min = 0.1, max = 2)
+# sigma_c = 0.5
+# sigma_b = 0.5
 
-  # Set up -----------------------------------------------------------------------
+# Set up -----------------------------------------------------------------------
   set.seed(seed)
 
   d_voters <- data$gen_voters
@@ -249,6 +273,11 @@ pb <- progress_bar$new(
     warning("max3 requires at least 3 candidates. Downgrading all 'max3' strategies to 'max2'.")
     strategy[strategy == "max3"] <- "max2"
   } # To avoid errors for two-candidate races
+
+  if (J < 3 && any(strategy == "max2")) {
+    warning("max2 requires at least 3 candidates. Downgrading all 'max2' strategies to 'max1'.")
+    strategy[strategy == "max2"] <- "max1"
+  }
 
 
   # Fixed parameters, created outside chains
@@ -279,7 +308,7 @@ pb <- progress_bar$new(
     # Determine which utility function to use
     if (J == 2 || all(strategy == "max1")) {
       full_util <- get_util_max1(d_voters, d_cands, N_voters, eps_sd, m_vec)
-    } else if (all(strategy %in% c("max1", "max2"))) {
+    } else if (J < 3 || all(strategy %in% c("max1", "max2"))) {
       full_util <- get_util_max2(d_voters, d_cands, N_voters, eps_sd, m_vec)
     } else {
       full_util <- get_util_max3(d_voters, d_cands, N_voters, eps_sd, m_vec)
