@@ -150,6 +150,7 @@ get_util_max3 <- function(d_voters, d_cands, N_voters, eps_sd, m_vec) {
   V_den_ex_list <- lapply(seq_len(J), function(k) rowSums(expV[, -k, drop = FALSE]))
   names(V_den_ex_list) <- seq_len(J)
 
+
   # Second-choice
   P_s_mat <- matrix(0, nrow = N_voters, ncol = J)
   for (j in seq_len(J)) {
@@ -168,6 +169,8 @@ get_util_max3 <- function(d_voters, d_cands, N_voters, eps_sd, m_vec) {
     key <- paste(sort(pair), collapse = ",")
     V_den_ex_pair_list[[key]] <- rowSums(expV[, -pair, drop = FALSE])
   }
+
+
 
   # Third-choice
   P_t_mat <- matrix(0, nrow = N_voters, ncol = J)
@@ -310,8 +313,16 @@ pb <- progress_bar$new(
       d_cands <- chain_cands[[t - 1]]$d_cands
     }
 
-    # <-- MODIFIED: Evaluate full utilities with max3 to retain all info
-    full_util <- get_util_max3(d_voters, d_cands, N_voters, eps_sd, m_vec)
+
+    # Determine which utility function to use
+    if (J == 2 || all(strategy == "max1")) {
+      full_util <- get_util_max1(d_voters, d_cands, N_voters, eps_sd, m_vec)
+    } else if (all(strategy %in% c("max1", "max2"))) {
+      full_util <- get_util_max2(d_voters, d_cands, N_voters, eps_sd, m_vec)
+    } else {
+      full_util <- get_util_max3(d_voters, d_cands, N_voters, eps_sd, m_vec)
+    }
+
     chain_voters[[t]] <- full_util
     P_now_all <- full_util$P_vec
 
