@@ -63,11 +63,7 @@ sim_data <- function(n_voter = 1000,
     v2 <- sin(voterAngle * pi / 180)
     voters$x <- v1 * myR
     voters$y <- v2 * myR
-
-    if (dist == "Flat") {
-      voters$x <- voters$x * 1.25
-      voters$y <- voters$y / 5
-    } else if (dist == "Polarized") {
+     if (dist == "Polarized") {
       voters <- voters[order(voters$ethnic_group), ]
       cutoff <- sum(ethnic[1:floor(length(ethnic) / 2)])
       voters$x[1:cutoff] <- voters$x[1:cutoff] / 10 + rnorm(cutoff, init, dev / 2)
@@ -97,14 +93,15 @@ sim_data <- function(n_voter = 1000,
   # Finalize voters
   voters <- voters %>%
     mutate(
-      x = case_when(x > 4 ~ 4, x < -4 ~ -4, TRUE ~ x),
-      y = case_when(y > 4 ~ 4, y < -4 ~ -4, TRUE ~ y),
+      x = 8 * (x - min(x)) / (max(x) - min(x)) - 4,
+      y = case_when(
+        dist == "Flat" | dist =="Polarized" ~ 2 * (y - min(y)) / (max(y) - min(y)) - 1,
+        TRUE ~ 8 * (y - min(y)) / (max(y) - min(y)) - 4),
       ethnic_group = paste0("Group ", ethnic_group),
       group = eth
     ) %>%
     dplyr::select(group, ethnic_group, x, y) %>%
     tibble()
-
 
   # Generate candidates
   cands <- voters%>%
