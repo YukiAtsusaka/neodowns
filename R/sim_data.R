@@ -6,16 +6,16 @@
 #' @param n_group Number of groups in the simulation.
 #' @param skew Skew---s parameter---of the zipf distribution for generating relative balance of ethnic groups,
 #' a high skew implies the biggest group is much bigger then other groups while
-#' a low skew implies more balance,
-#' .6 ensures no group has an outright majority.
+#' a low skew implies more balance, skew close to zero such as .1 will result in equal groups
+#' .6 ensures no group has an outright majority. 1 results in a majority group twice as large as other groups. 
 #' @param dev Parameter that tweaks the variance of the various bits of code that generate voter ideological positions,
-#' a high dev implies more variance within groups, a low dev implies less variance within groups.
+#' a high dev (around 1) implies more variance within groups, a low dev implies less variance within groups.
 #' @param dist Voter distribution, supporting 'Normal,' 'Flat,' 'Polarized,' or 'Clustered'
 #' @param init 'initial distance' between candidates/groups.
-#' a high init parameter indicates should form a circle around the origin with each group far away from it, whereas
+#' a high init parameter indicates groups in distributions like the polarized and cluster should form far away from the origin wih no overlap, whereas
 #' a low init parameter implies groups clustered around the origin with significant overlap.
 #' @param eth Parameter that controls for the separation of ideological space by ethnicity.
-#' eth = 0 is the maximum and eth = 1 is the minimum separation.
+#' eth = .5 is the maximum and eth = 1 is the minimum separation.
 #' @param seed Random seed for reproducibility.
 #' @importFrom dplyr case_when `%>%` mutate select left_join sample_n
 #' @importFrom tidyr pivot_longer
